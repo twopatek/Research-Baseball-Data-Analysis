@@ -1,0 +1,33 @@
+---
+title: "Baseballr"
+author: "Matthew Adams"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(tidyverse, baseballr, janitor)
+```
+
+
+```{r }
+ncaa_school_id_lu("LSU")
+
+team_id <- 365
+
+```
+
+
+```{r }
+df <- ncaa_team_player_stats(team_id = 365, year = 2023, type = "pitching") %>% 
+  clean_names() %>% 
+  filter(pos == "P") %>% 
+  arrange(era)
+
+df
+
+```
+
+
