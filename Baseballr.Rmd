@@ -24,7 +24,8 @@ team_id <- 365
 df <- ncaa_team_player_stats(team_id = 365, year = 2023, type = "pitching") %>% 
   clean_names() %>% 
   filter(pos == "P") %>% 
-  arrange(era)
+  arrange(era) %>% 
+  select(player, era)
 
 df
 
