@@ -14,32 +14,61 @@ pacman::p_load(tidyverse, baseballr, janitor, data.table)
 
 ```{r Baseball Reference}
 # List data files to compile
-data_files <- list.files(pattern = "sportsref_download")
+data_list <- list.files(pattern = "sportsref_download")
 
-type_summary <- map_dfr(data_files, function(file) {
-  df <- read_csv(file) %>% clean_names()
-  tibble(
-    file = file,
-    column = names(df),
-    type = map_chr(df, ~ class(.x)[1])
-  )
-})
-
-type_summary_wide <- type_summary %>%
-  pivot_wider(
-    names_from = file,
-    values_from = type
-  )
-
-
-# function to process data files
-process_sportsref <- function(filename) {
-  fread(filename) %>% 
-    clean_names() %>% 
-    mutate(season = str_extract(filename, "\\d{4}"))
+# Function to read and clean a file
+process_file <- function(file) {
+  read_csv(file, show_col_types = FALSE) %>% 
+    clean_names()
 }
 
-all_season_data <- map_dfr(data_files, process_sportsref)
+# Summary of each file's column types
+type_summary <- map_dfr(data_list, function(file) {
+  df <- process_file(file)
+  types <- map_chr(df, ~ class(.x)[1])  # get class of each column
+  
+  tibble(
+    file = file,
+    n_vars = ncol(df)
+  ) %>%
+    bind_cols(as_tibble_row(types))
+})
+
+# Create standard file format 
+template_df <- read_csv("sportsref_download_LSU_2025.csv") %>% clean_names()
+col_types_template <- map_chr(template_df, ~ class(.x)[1])
+
+read_and_clean <- function(file, col_types) {
+  df <- read_csv(file, show_col_types = FALSE) %>% clean_names()
+  
+  for (col in names(col_types)) {  # Loop over every column name in the type template
+  if (col %in% names(df)) {      # Only run if that column exists in the current file’s dataframe
+    df[[col]] <- switch(         # Coerce the column to the desired type using the template
+      col_types[[col]],          # This fetches the desired type for this column, e.g. "character"
+      
+      character = as.character(df[[col]]),  # If type is "character", convert it
+      numeric   = as.numeric(df[[col]]),    # If type is "numeric", convert it
+      integer   = as.integer(df[[col]]),    # If type is "integer", convert it
+      logical   = as.logical(df[[col]]),    # If type is "logical", convert it
+      
+      df[[col]]  # default: if type doesn't match any above, leave it unchanged
+    )
+    }
+  }
+  
+  # Extract year from file name and add it
+  year <- str_extract(file, "\\d{4}")
+  df <- mutate(df, year = as.integer(year))
+
+  return(df)
+}
+
+
+all_data <- map_dfr(data_list, ~ read_and_clean(.x, col_types_template))
+
+df <- all_data %>% 
+  filter(!is.na(rk)) %>% 
+  relocate(year, .before = everything())
 
 ```
 
