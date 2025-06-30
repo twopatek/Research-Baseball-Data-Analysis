@@ -12,7 +12,7 @@ pacman::p_load(tidyverse, baseballr, janitor, data.table)
 ```
 
 
-```{r Baseball Reference}
+```{r Baseball Reference, warning=FALSE}
 # List data files to compile
 data_list <- list.files(pattern = "sportsref_download")
 
@@ -67,10 +67,45 @@ read_and_clean <- function(file, col_types) {
 all_data <- map_dfr(data_list, ~ read_and_clean(.x, col_types_template))
 
 df <- all_data %>% 
+  mutate(name = str_replace_all(name, "[^A-Za-z ]", "")) %>% 
   filter(!is.na(rk)) %>% 
-  relocate(year, .before = everything())
+  relocate(year, .before = everything()) %>% 
+  select(year, name, era, ip, bb, bb9, so, so9, h, h9, hr, hr9, whip)
 
 ```
+
+
+```{r analysis 1}
+
+df_analysis_1 <- df %>% 
+  filter(ip > 0) %>% 
+  group_by(year) %>% 
+  summarise(across(
+    where(is.numeric),
+    list(
+      mean = ~round(mean(.x, na.rm = TRUE), 3),
+      median = ~round(median(.x, na.rm = TRUE), 3)),
+    .names = "{.col}_{.fn}"
+    ))
+
+ggplot(df_analysis_1, aes(x = factor(year), y = so9_median, fill = factor(year))) +
+  geom_col() +
+  scale_fill_manual(values = rep(c("#582C83", "#FDB827"), length.out = length(unique(df_analysis_1$year)))) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(
+    title = "LSU Pitching Trends",
+    subtitle = "Median SO/9 by Season",
+    x = "Season",
+    y = "Strikeouts per 9 Innings"
+    )
+
+
+
+```
+
+
+
 
 
 ```{r baseballr}
