@@ -13,6 +13,13 @@ The app is designed for baseball analysts, researchers, and fans interested in e
 ➡️ **[Click here to explore the NCAA Pitching Analysis Dashboard](https://matthew-apps.shinyapps.io/baseball_data_analysis/)**  
 _The app is hosted via [shinyapps.io](https://www.shinyapps.io)._
 
+## License
+
+This project is proprietary and all rights are reserved by Matthew Adams.
+
+Unauthorized copying, modification, distribution, or commercial use is strictly prohibited.  
+For collaboration inquiries or licensing requests, contact: mdadams626@outlook.com.
+
 ## Dashboard Features
 
 ###  Leaderboard Tab
