@@ -54,7 +54,7 @@ Data is loaded from a local directory (`/Data/`) and cleaned using the `janitor`
 - `school`, `year`, `name`, `ip`, `era`, `whip`, `bb9`, `so9`, `h9`, `hr9`, etc.
 - Only pitching stats are used. Hitting stats are excluded.
 
-> ⚠️ **Note**: Large-scale data ingestion is ongoing. Currently available teams include LSU (2011–2025) and select others. Full D1 coverage is a long-term goal.
+> ⚠️ **Note**: Large-scale data ingestion is ongoing. Full D1 coverage is a long-term goal.
 
 ---
 
