@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(tidyverse, baseballr, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets)
+pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets)
 ```
 
 
@@ -135,28 +135,7 @@ ggplot(df_analysis_1, aes(x = factor(year), y = so9_median, fill = factor(year))
     x = "Season",
     y = "Strikeouts per 9 Innings"
     )
-
-
-
 ```
 
-
-
-
-
-```{r baseballr}
-ncaa_school_id_lu("LSU")
-
-team_id <- 365
-
-df <- ncaa_team_player_stats(team_id = 365, year = 2023, type = "pitching") %>% 
-  clean_names() %>% 
-  filter(pos == "P") %>% 
-  arrange(era) %>% 
-  select(player, era)
-
-df
-
-```
 
 
