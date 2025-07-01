@@ -8,7 +8,7 @@ The app is designed for baseball analysts, researchers, and fans interested in e
 
 ---
 
-## Live Dashboard
+## Live Dashboard Prototype
 
 ➡️ **[Click here to explore the NCAA Pitching Analysis Dashboard](https://matthew-apps.shinyapps.io/baseball_data_analysis/)**  
 _The app is hosted via [shinyapps.io](https://www.shinyapps.io)._
