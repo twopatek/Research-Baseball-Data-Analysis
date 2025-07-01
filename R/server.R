@@ -1,6 +1,82 @@
 # Define server logic 
 server <- function(input, output, session) {
   
+  ### Leaderboard Menu Item ###
+  
+  output$ip_slider_ui <- renderUI({
+    req(df)
+    
+    min_ip <- 1
+    max_ip <- ceiling(max(df$ip, na.rm = TRUE))
+    
+    sliderInput("ip_range",
+                "Select Innings Pitched Range:",
+                min = min_ip,
+                max = max_ip,
+                value = c(30, max_ip),
+                step = 1)
+  })
+  
+  
+  
+  # Top 5 ERA by Team-Year
+  output$top_era_teams <- renderDT({
+    
+    req(input$ip_range)
+    
+    df %>%
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      mutate(year_team = paste(year, school)) %>%
+      group_by(year_team) %>%
+      summarize(ip = round(mean(ip, na.rm = TRUE), 1), era = round(mean(era, na.rm = TRUE), 3)) %>%
+      arrange(era) %>%
+      slice_head(n = 5) %>%
+      datatable(options = list(dom = 't'), rownames = FALSE)
+  })
+  
+  # Top 5 ERA by Player-Year
+  output$top_era_players <- renderDT({
+    
+    req(input$ip_range)
+    
+    df %>%
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      mutate(school_year_player = paste(year, school, name)) %>%
+      select(school_year_player, ip, era) %>% 
+      arrange(era) %>%
+      slice_head(n = 5) %>%
+      datatable(options = list(dom = 't'), rownames = FALSE)
+  })
+  
+  # Top 5 WHIP by Team-Year
+  output$top_whip_teams <- renderDT({
+    
+    req(input$ip_range)
+    
+    df %>%
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      mutate(year_team = paste(year, school)) %>%
+      group_by(year_team) %>%
+      summarize(ip = round(mean(ip, na.rm = TRUE), 1), whip = round(mean(whip, na.rm = TRUE), 3)) %>%
+      arrange(whip) %>%
+      slice_head(n = 5) %>%
+      datatable(options = list(dom = 't'), rownames = FALSE)
+  })
+  
+  # Top 5 WHIP by Player-Year
+  output$top_whip_players <- renderDT({
+    
+    req(input$ip_range)
+    
+    df %>%
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      mutate(school_year_player = paste(year, school, name)) %>%
+      select(school_year_player, ip, whip) %>% 
+      arrange(whip) %>%
+      slice_head(n = 5) %>%
+      datatable(options = list(dom = 't'), rownames = FALSE)
+  })
+  
   ### Data Menu Item ###
   
   # Render dynamic slider to filter innings pitched
@@ -36,6 +112,18 @@ server <- function(input, output, session) {
       updateSelectInput(session, "years", selected = character(0))
     }
   })
+  
+  # Button to reset raw data table
+  observeEvent(input$reset_data_table, {
+    updateSelectInput(session, "data_schools", selected = schools)
+    updateCheckboxInput(session, "data_school_select_all", value = TRUE)
+    
+    updateSelectInput(session, "years", selected = "2025")
+    updateCheckboxInput(session, "year_select_all", value = TRUE)
+    
+    updateSliderInput(session, "var", value = c(1, max(df$ip, na.rm = TRUE)))
+  })
+  
 
   # Reactive raw data
   filtered_raw_df <- reactive({
@@ -55,7 +143,11 @@ server <- function(input, output, session) {
     datatable(
       filtered_raw_df(),
       class = 'cell-border stripe',
-      options = list(scrollY = TRUE, pageLength = 10)
+      options = list(
+        scrollY = TRUE, 
+        scrollX = TRUE,
+        fixedHeader = TRUE,
+        pageLength = 10)
     )
   })
   
@@ -127,7 +219,7 @@ server <- function(input, output, session) {
   })
   
   # Reset table data
-  observeEvent(input$reset_table, {
+  observeEvent(input$reset_report_table, {
     report_mode("full")
   })
   
@@ -139,7 +231,10 @@ server <- function(input, output, session) {
         filter(ip > 0) %>%
         datatable(
           class = 'cell-border stripe',
-          options = list(scrollX = TRUE, pageLength = 15)
+          options = list(
+            scrollX = TRUE,
+            scrollY = TRUE,
+            pageLength = 10)
         )
     } else {
       # Show summary data
@@ -147,7 +242,10 @@ server <- function(input, output, session) {
       datatable(
         summary_data(),
         class = 'cell-border stripe',
-        options = list(scrollX = TRUE, pageLength = 15)
+        options = list(
+          scrollX = TRUE, 
+          scrollY = TRUE,
+          pageLength = 10)
       )
     }
   })
@@ -228,83 +326,6 @@ server <- function(input, output, session) {
              yaxis = list(title = input$plot_var),
              xaxis = list(title = "Year"))
   })
-  
-  ### Leaderboard Menu Item ###
-  
-  output$ip_slider_ui <- renderUI({
-    req(df)
-    
-    min_ip <- 1
-    max_ip <- ceiling(max(df$ip, na.rm = TRUE))
-    
-    sliderInput("ip_range",
-                "Select Innings Pitched Range:",
-                min = min_ip,
-                max = max_ip,
-                value = c(30, max_ip),
-                step = 1)
-  })
-  
-  
-  
-  # Top 5 ERA by Team-Year
-  output$top_era_teams <- renderDT({
-    
-    req(input$ip_range)
-    
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(team_year = paste(school, year)) %>%
-      group_by(team_year) %>%
-      summarize(ip = round(mean(ip, na.rm = TRUE), 1), era = round(mean(era, na.rm = TRUE), 3)) %>%
-      arrange(era) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
-  })
-  
-  # Top 5 ERA by Player-Year
-  output$top_era_players <- renderDT({
-    
-    req(input$ip_range)
-    
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(school_year_player = paste(year, school, name)) %>%
-      select(school_year_player, ip, era) %>% 
-      arrange(era) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
-  })
-  
-  # Top 5 WHIP by Team-Year
-  output$top_whip_teams <- renderDT({
-    
-    req(input$ip_range)
-    
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(team_year = paste(school, year)) %>%
-      group_by(team_year) %>%
-      summarize(ip = round(mean(ip, na.rm = TRUE), 1), whip = round(mean(whip, na.rm = TRUE), 3)) %>%
-      arrange(whip) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
-  })
-  
-  # Top 5 WHIP by Player-Year
-  output$top_whip_players <- renderDT({
-    
-    req(input$ip_range)
-    
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(school_year_player = paste(year, school, name)) %>%
-      select(school_year_player, ip, whip) %>% 
-      arrange(whip) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
-  })
-  
   
 }
 

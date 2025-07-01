@@ -15,21 +15,22 @@ pacman::p_load(tidyverse, baseballr, janitor, data.table, here, rlang, shinydash
 ```{r data sourcing}
 pitching_programs <- tribble(
   ~team,             ~notes,
-  "Vanderbilt",      "Elite development; produced Price, Rocker, Leiter",
-  "Florida",         "Consistent high-round draft picks; deep rotation",
-  "UCLA",            "Pitching-first culture; Bauer, Cole, Garcia",
-  "LSU",             "Strong pitching tradition in powerhouse program",
-  "Arkansas",        "SEC standout; produced Kevin Kopps, Hagen Smith",
+  "Vanderbilt",        "Elite development; produced Price, Rocker, Leiter",
+  "Florida",           "Consistent high-round draft picks; deep rotation",
+  "UCLA",              "Pitching-first culture; Bauer, Cole, Garcia",
+  "LSU",               "Strong pitching tradition in powerhouse program",
+  "Arkansas",          "SEC standout; produced Kevin Kopps, Hagen Smith",
   "Mississippi State", "Pitching-focused with strong recent arms",
-  "Texas A&M",       "Underrated pitching development",
-  "Wake Forest",     "Analytical leader in biomechanics and pitching velocity",
-  "Louisville",      "Solid college arms; Detmers, Funkhouser",
-  "Stanford",        "West Coast development hub with pro-ready arms",
-  "North Carolina",  "Historic pitching success; Bard, Harvey",
-  "Oregon State",    "Efficient, well-coached staff; consistent results",
-  "South Carolina",  "Known for elite pitching in championship era",
-  "Tennessee",       "Recent pitching surge; Dollander, Beam",
-  "TCU",             "Big 12 leader in pitching depth and development"
+  "Texas A&M",         "Underrated pitching development",
+  "Wake Forest",       "Analytical leader in biomechanics and pitching velocity",
+  "Louisville",        "Solid college arms; Detmers, Funkhouser",
+  "Stanford",          "West Coast development hub with pro-ready arms",
+  "North Carolina",    "Historic pitching success; Bard, Harvey",
+  "Oregon State",      "Efficient, well-coached staff; consistent results",
+  "South Carolina",    "Known for elite pitching in championship era",
+  "Tennessee",         "Recent pitching surge; Dollander, Beam",
+  "TCU",               "Big 12 leader in pitching depth and development",
+  "Florida State",     "Consistant NCAA Tournament appearences"
 )
 
 pitching_programs
