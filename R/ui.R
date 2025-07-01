@@ -1,10 +1,11 @@
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
-  dashboardHeader(title = "LSU Pitching Analysis Dashboard"),
+  dashboardHeader(title = "NCAA Pitching Analysis Dashboard"),
   dashboardSidebar(
     sidebarMenu(
       menuItem("Data", tabName = "data_tab"),
-      menuItem("Analysis", tabName = "analysis_tab")
+      menuItem("Analysis", tabName = "analysis_tab"),
+      menuItem("Leaderboard", tabName = "leaderboard_tab")
     )
   ),
   dashboardBody(
@@ -83,10 +84,53 @@ ui <- dashboardPage(
                      )
             )
         )
+      ),
+      tabItem(
+        tabName = "leaderboard_tab",
+        fluidRow(
+          box(
+            title = "Filter by Minimum Innings Pitched",
+            status = "warning",
+            solidHeader = TRUE,
+            width = 12,
+            uiOutput("ip_slider_ui")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Top 5 ERA (Team-Year)",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            DTOutput("top_era_teams")
+          ),
+          box(
+            title = "Top 5 ERA (Player-Year)",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            DTOutput("top_era_players")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Top 5 WHIP (Team-Year)",
+            status = "info",
+            solidHeader = TRUE,
+            width = 6,
+            DTOutput("top_whip_teams")
+          ),
+          box(
+            title = "Top 5 WHIP (Player-Year)",
+            status = "info",
+            solidHeader = TRUE,
+            width = 6,
+            DTOutput("top_whip_players")
+          )
+        )
       )
     )
   )
 )
-  
 
 

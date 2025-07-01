@@ -43,7 +43,7 @@ read_and_clean <- function(file, col_types) {
   # Extract school and year from filename
   file_base <- basename(file)
   
-  school <- str_extract(file_base, "(?<=sportsref_download_)[A-Za-z]+")
+  school <- str_extract(file_base, "(?<=sportsref_download_).+?(?=_[0-9]{4})")
   year   <- str_extract(file_base, "\\d{4}")
   
   df <- df %>%
