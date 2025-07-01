@@ -15,13 +15,21 @@ ui <- dashboardPage(
           column(
             width = 4,
             selectInput(
+              "data_schools",
+              "Select School(s)",
+              choices = schools,
+              selected = "LSU",
+              multiple = TRUE
+            ),
+            checkboxInput("data_school_select_all", "Select/Deselect All Schools", value = TRUE),
+            selectInput(
               "years",
               "Select Year(s)",
               choices = seasons,
               selected = "2025",
               multiple = TRUE
             ),
-            checkboxInput("input_select_all", "Select/Deselect All Years", value = TRUE)
+            checkboxInput("year_select_all", "Select/Deselect All Years", value = TRUE)
           )
         ),
         uiOutput("ip_slider"),
@@ -36,6 +44,14 @@ ui <- dashboardPage(
               fluidRow(
                 column(
                   width = 4,
+                  selectInput(
+                    "report_schools",
+                    "Select School(s)",
+                    choices = schools,
+                    selected = "LSU",
+                    multiple = TRUE
+                  ),
+                  checkboxInput("report_school_select_all", "Select/Deselect All Schools", value = TRUE),
                   uiOutput("report_var_selector"),
                   actionButton("summary_stats", "Calculate Summary Stats"),
                   br(), br(), 
@@ -51,6 +67,12 @@ ui <- dashboardPage(
                      fluidRow(
                        column(
                          width = 4,
+                         selectInput(
+                           "plot_schools",
+                           "Select School(s)",
+                           choices = schools,
+                           selected = "LSU"
+                         ),
                          uiOutput("plot_var_selector")
                        ),
                        column(
