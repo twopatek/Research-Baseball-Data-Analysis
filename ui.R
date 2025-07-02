@@ -64,12 +64,18 @@ ui <- dashboardPage(
               solidHeader = TRUE,
               status = "info",
               width = 12,
-              selectInput(
-                "data_schools",
-                "Select School(s)",
+              selectizeInput(
+                inputId = "data_schools",
+                label = "Select School(s)",
                 choices = schools,
-                selected = "LSU",
-                multiple = TRUE
+                selected = schools,
+                multiple = TRUE,
+                options = list(
+                  placeholder = 'Search or scroll to choose school(s)',
+                  maxOptions = 1000,
+                  plugins = list('remove_button'),
+                  closeAfterSelect = FALSE
+                )
               ),
               checkboxInput("data_school_select_all", "Select/Deselect All Schools", value = TRUE),
               selectInput(
@@ -119,12 +125,17 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "primary",
                            width = 12,
-                           selectInput(
-                             "report_schools",
-                             "Select School(s)",
+                           selectizeInput(
+                             inputId = "report_schools",
+                             label = "Select School(s)",
                              choices = schools,
-                             selected = "LSU",
-                             multiple = TRUE
+                             selected = first(schools),
+                             multiple = TRUE,
+                             options = list(
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
+                             )
                            ),
                            checkboxInput("report_school_select_all", "Select/Deselect All Schools", value = TRUE),
                            uiOutput("report_var_selector"),
@@ -158,7 +169,7 @@ ui <- dashboardPage(
                              "plot_schools",
                              "Select School(s)",
                              choices = schools,
-                             selected = "LSU"
+                             selected = first(schools)
                            ),
                          uiOutput("plot_var_selector")
                          )),

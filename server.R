@@ -115,7 +115,7 @@ server <- function(input, output, session) {
   
   # Button to reset raw data table
   observeEvent(input$reset_data_table, {
-    updateSelectInput(session, "data_schools", selected = schools)
+    updateSelectInput(session, "data_schools", selected = first(schools))
     updateCheckboxInput(session, "data_school_select_all", value = TRUE)
     
     updateSelectInput(session, "years", selected = "2025")
@@ -145,7 +145,8 @@ server <- function(input, output, session) {
       class = 'cell-border stripe',
       options = list(
         scrollY = TRUE, 
-        scrollX = TRUE,
+        scrollX = "100px",
+        scrollCollapse = TRUE,
         fixedHeader = TRUE,
         pageLength = 10)
     )
@@ -165,14 +166,14 @@ server <- function(input, output, session) {
       filter(school %in% input$report_schools)
   })
   
-  # Render dynamic school selector
-  observe({
+  observeEvent(input$report_school_select_all, {
     if (input$report_school_select_all) {
       updateSelectInput(session, "report_schools", selected = schools)
     } else {
       updateSelectInput(session, "report_schools", selected = character(0))
     }
-  })
+  }, ignoreInit = TRUE)
+  
   
   # Render UI
   output$report_var_selector <- renderUI({

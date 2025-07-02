@@ -1,5 +1,10 @@
 # Load and install packages
-pacman::p_load(tidyverse, baseballr, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets)
+
+pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets)
+
+# install.packages("http://cran.r-project.org/src/contrib/Archive/curl/curl_6.2.3.tar.gz", repos=NULL, type="source")
+# install.packages("rsconnect", type = "binary")
+# library(rsconnect)
 
 # Set directory for data files
 # data_path <- "/Users/matthewadams/Documents/R Projects/Baseball Data Analysis/Data/LSU"
