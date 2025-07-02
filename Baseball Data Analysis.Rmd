@@ -106,7 +106,83 @@ all_data <- map_dfr(data_list, ~ read_and_clean(.x, col_types_template))
 df <- all_data %>% 
   mutate(name = str_replace_all(name, "[^A-Za-z ]", "")) %>% 
   filter(!is.na(rk)) %>% 
-  select(year, school, name, era, ip, bb, bb9, so, so9, h, h9, hr, hr9, whip)
+  select(-notes) %>% 
+  relocate(year, .before = everything()) %>% 
+  relocate(school, .after = year)
+
+```
+Advanced statistics
+
+1. Fielding Independent Pitching (FIP)
+Estimates a pitcher’s performance independent of fielding.
+
+2. K% (Strikeout Rate)
+Shows how often a pitcher strikes out hitters, normalized by batters faced (BF).Unlike K/9, it doesn’t get skewed by low innings.
+
+3. BB% (Walk Rate)
+
+4. Strikeout-to-Walk Ratio
+
+5. Batting Average on Balls in Play
+It measures how often balls hit into the field of play turn into hits — excluding home runs, strikeouts, walks, and hit-by-pitches.
+
+
+```{r computed stats}
+# FIP variables
+hr_weight <- 13
+bb_weight <- 3
+so_weight <- 2
+fip_constant <- 3.1
+fip_min_ip <- 10
+
+# SO % variables
+k_pct_min_bf <- 10
+
+# BB % variables
+bb_pct_min_bf <- 10
+
+# K/BB % variables
+k_bb_min_bb <- 1
+k_bb_min_ip <- 10
+
+# BABIP variables
+babip_min_ip <- 10
+
+# Testing data
+test <- df %>%
+  mutate(
+    fip = case_when(
+      is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
+      ip < fip_min_ip ~ NA_real_,
+      TRUE ~ ((hr_weight * hr) + (bb_weight * bb) - (so_weight * so)) / ip + fip_constant
+    ),
+    
+    k_pct = case_when(
+      is.na(so) | is.na(bf) | bf < k_pct_min_bf ~ NA_real_,
+      TRUE ~ so / bf
+    ),
+    
+    bb_pct = case_when(
+      is.na(bb) | is.na(bf) | bf < bb_pct_min_bf ~ NA_real_,
+      TRUE ~ bb / bf
+    ),
+    
+    k_bb = case_when(
+      is.na(so) | is.na(bb) | is.na(ip) ~ NA_real_,
+      ip < k_bb_min_ip ~ NA_real_,
+      bb == 0 ~ NA_real_,  # or Inf, depending on your preference
+      TRUE ~ so / bb
+    ),
+    
+    babip_denominator = bf - so - bb - hbp - hr,
+    
+    babip = case_when(
+      is.na(h) | is.na(hr) | is.na(so) | is.na(bb) | is.na(hbp) | is.na(bf) | is.na(ip) ~ NA_real_,
+      ip < babip_min_ip ~ NA_real_,
+      babip_denominator <= 0 ~ NA_real_,
+      TRUE ~ (h - hr) / babip_denominator
+    )
+  )
 
 ```
 
