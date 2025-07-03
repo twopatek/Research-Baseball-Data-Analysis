@@ -15,7 +15,7 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = "Filter by Minimum Innings Pitched",
-            status = "warning",
+            status = "info",
             solidHeader = TRUE,
             width = 12,
             uiOutput("ip_slider_ui")
@@ -40,14 +40,14 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = "Top 5 WHIP (Team-Year)",
-            status = "info",
+            status = "warning",
             solidHeader = TRUE,
             width = 6,
             DTOutput("top_whip_teams")
           ),
           box(
             title = "Top 5 WHIP (Player-Year)",
-            status = "info",
+            status = "warning",
             solidHeader = TRUE,
             width = 6,
             DTOutput("top_whip_players")
@@ -68,7 +68,7 @@ ui <- dashboardPage(
                 inputId = "data_schools",
                 label = "Select School(s)",
                 choices = schools,
-                selected = schools,
+                selected = first(schools),
                 multiple = TRUE,
                 options = list(
                   placeholder = 'Search or scroll to choose school(s)',
@@ -77,15 +77,20 @@ ui <- dashboardPage(
                   closeAfterSelect = FALSE
                 )
               ),
-              checkboxInput("data_school_select_all", "Select/Deselect All Schools", value = TRUE),
-              selectInput(
-                "years",
-                "Select Year(s)",
+              checkboxInput("data_school_select_all", "Select/Deselect All Schools", value = FALSE),
+              selectizeInput(
+                inputId = "years",
+                label = "Select Year(s)",
                 choices = seasons,
-                selected = "2025",
-                multiple = TRUE
+                selected = max(seasons),
+                multiple = TRUE,
+                options = list(
+                  placeholder = 'Search or scroll to choose year(s)',
+                  plugins = list('remove_button'),
+                  maxOptions = 1000
+                )
               ),
-              checkboxInput("year_select_all", "Select/Deselect All Years", value = TRUE),
+              checkboxInput("year_select_all", "Select/Deselect All Years", value = FALSE),
               br(),
               actionButton("reset_data_table", "Reset Table")
             )
@@ -95,7 +100,7 @@ ui <- dashboardPage(
             box(
               title = "Choose the minimum or maximum innings pitched",
               solidHeader = TRUE,
-              status = "warning",
+              status = "info",
               width = 12,
               uiOutput("ip_slider")
             )
@@ -123,7 +128,7 @@ ui <- dashboardPage(
                          box(
                            title = "Report Data Parameters",
                            solidHeader = TRUE,
-                           status = "primary",
+                           status = "info",
                            width = 12,
                            selectizeInput(
                              inputId = "report_schools",
@@ -149,13 +154,87 @@ ui <- dashboardPage(
                          box(
                            title = "Report Output",
                            solidHeader = TRUE,
-                           status = "info",
+                           status = "primary",
                            width = 12,
                            DTOutput("analysis_report")
                          )
                        )
                      )
             ),
+            
+            tabPanel("Advanced Statistics", 
+                     fluidRow(
+                       column(
+                         width = 3,
+                         box(
+                           title = "Advanced Stat Controls",
+                           solidHeader = TRUE,
+                           status = "info",
+                           width = 12,
+                           
+                           # School + Year inputs (unchanged)
+                           selectizeInput(
+                             inputId = "adv_schools",
+                             label = "Select School(s)",
+                             choices = schools,
+                             selected = first(schools),
+                             multiple = TRUE,
+                             options = list(
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
+                             )
+                           ),
+                           checkboxInput("adv_school_select_all", "Select/Deselect All Schools", value = TRUE),
+                           
+                           selectInput(
+                             inputId = "adv_years",
+                             label = "Select Year(s)",
+                             choices = seasons,
+                             selected = "2025",
+                             multiple = TRUE
+                           ),
+                           checkboxInput("adv_year_select_all", "Select/Deselect All Years", value = TRUE),
+                           
+                           # NEW: Wrap stat inputs in two columns
+                           fluidRow(
+                             column(
+                               width = 6,
+                               numericInput("hr_weight", "HR Weight (FIP)", value = 13),
+                               numericInput("bb_weight", "BB Weight (FIP)", value = 3),
+                               numericInput("so_weight", "SO Weight (FIP)", value = 2),
+                               numericInput("fip_constant", "FIP Constant", value = 3.1),
+                               numericInput("fip_min_ip", "Min IP (FIP)", value = 10)
+                             ),
+                             column(
+                               width = 6,
+                               numericInput("k_pct_min_bf", "Min BF (K%)", value = 10),
+                               numericInput("bb_pct_min_bf", "Min BF (BB%)", value = 10),
+                               numericInput("k_bb_min_bb", "Min BB (K/BB)", value = 1),
+                               numericInput("k_bb_min_ip", "Min IP (K/BB)", value = 10),
+                               numericInput("babip_min_ip", "Min IP (BABIP)", value = 10)
+                             )
+                           ),
+                           
+                           br(),
+                           actionButton("calc_adv_stats", "Calculate Advanced Stats"),
+                           br(), br(),
+                           actionButton("reset_adv_stats", "Reset")
+                         )
+                       ),
+                       column(
+                         width = 9,
+                         box(
+                           title = "Advanced Statistics Output",
+                           solidHeader = TRUE,
+                           status = "primary",
+                           width = 12,
+                           DTOutput("adv_stats_output")  # This will be your rendered table
+                         )
+                       )
+                     )
+            ),
+            
             tabPanel("Plot Tab", 
                      fluidRow(
                        column(
@@ -163,7 +242,7 @@ ui <- dashboardPage(
                          box(
                            title = "Filter Plot",
                            solidHeader = TRUE,
-                           status = "warning",
+                           status = "info",
                            width = 12,
                            selectInput(
                              "plot_schools",
@@ -178,7 +257,7 @@ ui <- dashboardPage(
                          box(
                            title = "Plot",
                            solidHeader = TRUE,
-                           status = "info",
+                           status = "primary",
                            width = 12,
                            plotlyOutput("analysis_plot")
                          )

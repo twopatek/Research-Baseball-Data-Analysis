@@ -79,6 +79,24 @@ server <- function(input, output, session) {
   
   ### Data Menu Item ###
   
+  # Render dynamic school selector
+  observe({
+    if (input$data_school_select_all) {
+      updateSelectInput(session, "data_schools", selected = schools)
+    } else {
+      updateSelectInput(session, "data_schools", selected = first(schools))
+    }
+  })
+  
+  # Render dynamic year selector
+  observe({
+    if (input$year_select_all) {
+      updateSelectInput(session, "years", selected = seasons)
+    } else {
+      updateSelectInput(session, "years", selected = max(seasons))
+    }
+  })
+  
   # Render dynamic slider to filter innings pitched
   output$ip_slider <- renderUI({
     req(df)
@@ -95,31 +113,13 @@ server <- function(input, output, session) {
     )
   })
   
-  # Render dynamic school selector
-  observe({
-    if (input$data_school_select_all) {
-      updateSelectInput(session, "data_schools", selected = schools)
-    } else {
-      updateSelectInput(session, "data_schools", selected = character(0))
-    }
-  })
-  
-  # Render dynamic year selector
-  observe({
-    if (input$year_select_all) {
-      updateSelectInput(session, "years", selected = seasons)
-    } else {
-      updateSelectInput(session, "years", selected = character(0))
-    }
-  })
-  
   # Button to reset raw data table
   observeEvent(input$reset_data_table, {
     updateSelectInput(session, "data_schools", selected = first(schools))
-    updateCheckboxInput(session, "data_school_select_all", value = TRUE)
+    updateCheckboxInput(session, "data_school_select_all", value = FALSE)
     
     updateSelectInput(session, "years", selected = "2025")
-    updateCheckboxInput(session, "year_select_all", value = TRUE)
+    updateCheckboxInput(session, "year_select_all", value = FALSE)
     
     updateSliderInput(session, "var", value = c(1, max(df$ip, na.rm = TRUE)))
   })
@@ -249,6 +249,103 @@ server <- function(input, output, session) {
           pageLength = 10)
       )
     }
+  })
+  
+  ### Advanced Statistics Panel Server Logic ###
+  
+  # Observe school select/deselect all toggle
+  observeEvent(input$data_school_select_all, {
+    if (input$data_school_select_all) {
+      updateSelectInput(session, "data_schools", selected = schools)
+    } else {
+      updateSelectInput(session, "data_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$year_select_all, {
+    if (input$year_select_all) {
+      updateSelectInput(session, "years", selected = seasons)
+    } else {
+      updateSelectInput(session, "years", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  
+  # Reactive expression to filter dataset for advanced stats
+  filtered_adv_df <- eventReactive(input$calc_adv_stats, {
+    req(input$adv_schools, input$adv_years)
+    
+    df %>%
+      filter(
+        school %in% input$adv_schools,
+        year %in% input$adv_years
+      ) %>%
+      mutate(
+        fip = case_when(
+          is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
+          ip < input$fip_min_ip ~ NA_real_,
+          TRUE ~ round(((input$hr_weight * hr) + (input$bb_weight * bb) - (input$so_weight * so)) / ip + input$fip_constant, 3)
+        ),
+        k_pct = case_when(
+          is.na(so) | is.na(bf) | bf < input$k_pct_min_bf ~ NA_real_,
+          TRUE ~ round(so / bf, 3)
+        ),
+        bb_pct = case_when(
+          is.na(bb) | is.na(bf) | bf < input$bb_pct_min_bf ~ NA_real_,
+          TRUE ~ round(bb / bf, 3)
+        ),
+        k_bb = case_when(
+          is.na(so) | is.na(bb) | is.na(ip) ~ NA_real_,
+          ip < input$k_bb_min_ip ~ NA_real_,
+          bb < input$k_bb_min_bb ~ NA_real_,
+          bb == 0 ~ NA_real_,
+          TRUE ~ round(so / bb, 3)
+        ),
+        babip_denominator = bf - so - bb - hbp - hr,
+        babip = case_when(
+          is.na(h) | is.na(hr) | is.na(so) | is.na(bb) | is.na(hbp) | is.na(bf) | is.na(ip) ~ NA_real_,
+          ip < input$babip_min_ip ~ NA_real_,
+          babip_denominator <= 0 ~ NA_real_,
+          TRUE ~ round((h - hr) / babip_denominator, 3)
+        )
+      ) %>% 
+      select(year, school, name, ip, fip, k_pct, bb_pct, k_bb, babip)
+  })
+  
+  # Reset advanced stats input controls
+  observeEvent(input$reset_adv_stats, {
+    updateSelectInput(session, "adv_schools", selected = first(schools))
+    updateCheckboxInput(session, "adv_school_select_all", value = TRUE)
+    
+    updateSelectInput(session, "adv_years", selected = "2025")
+    updateCheckboxInput(session, "adv_year_select_all", value = TRUE)
+    
+    updateNumericInput(session, "hr_weight", value = 13)
+    updateNumericInput(session, "bb_weight", value = 3)
+    updateNumericInput(session, "so_weight", value = 2)
+    updateNumericInput(session, "fip_constant", value = 3.1)
+    updateNumericInput(session, "fip_min_ip", value = 10)
+    
+    updateNumericInput(session, "k_pct_min_bf", value = 10)
+    updateNumericInput(session, "bb_pct_min_bf", value = 10)
+    updateNumericInput(session, "k_bb_min_bb", value = 1)
+    updateNumericInput(session, "k_bb_min_ip", value = 10)
+    updateNumericInput(session, "babip_min_ip", value = 10)
+  })
+  
+  # Render advanced stats output
+  output$adv_stats_output <- renderDT({
+    req(filtered_adv_df())
+    
+    datatable(
+      filtered_adv_df(),
+      class = 'cell-border stripe',
+      options = list(
+        scrollX = TRUE,
+        scrollY = TRUE,
+        pageLength = 10
+      )
+    )
   })
   
   ## Plot Tab Panel ##

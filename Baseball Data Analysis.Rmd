@@ -51,17 +51,17 @@ process_file <- function(file) {
     clean_names()
 }
 
-# Summary of each file's column types
-type_summary <- map_dfr(data_list, function(file) {
-  df <- process_file(file)
-  types <- map_chr(df, ~ class(.x)[1])  # get class of each column
-  
-  tibble(
-    file = file,
-    n_vars = ncol(df)
-  ) %>%
-    bind_cols(as_tibble_row(types))
-})
+# # Summary of each file's column types
+# type_summary <- map_dfr(data_list, function(file) {
+#   df <- process_file(file)
+#   types <- map_chr(df, ~ class(.x)[1])  # get class of each column
+#   
+#   tibble(
+#     file = file,
+#     n_vars = ncol(df)
+#   ) %>%
+#     bind_cols(as_tibble_row(types))
+# })
 
 # Create standard file format 
 template_df <- read_csv(here("Data", "LSU", "sportsref_download_LSU_2025.csv")) %>% clean_names()
@@ -154,24 +154,24 @@ test <- df %>%
     fip = case_when(
       is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
       ip < fip_min_ip ~ NA_real_,
-      TRUE ~ ((hr_weight * hr) + (bb_weight * bb) - (so_weight * so)) / ip + fip_constant
+      TRUE ~ round((((hr_weight * hr) + (bb_weight * bb) - (so_weight * so)) / ip + fip_constant), 3)
     ),
     
     k_pct = case_when(
       is.na(so) | is.na(bf) | bf < k_pct_min_bf ~ NA_real_,
-      TRUE ~ so / bf
+      TRUE ~ round((so / bf), 3)
     ),
     
     bb_pct = case_when(
       is.na(bb) | is.na(bf) | bf < bb_pct_min_bf ~ NA_real_,
-      TRUE ~ bb / bf
+      TRUE ~ round((bb / bf), 3)
     ),
     
     k_bb = case_when(
       is.na(so) | is.na(bb) | is.na(ip) ~ NA_real_,
       ip < k_bb_min_ip ~ NA_real_,
       bb == 0 ~ NA_real_,  # or Inf, depending on your preference
-      TRUE ~ so / bb
+      TRUE ~ round((so / bb), 3)
     ),
     
     babip_denominator = bf - so - bb - hbp - hr,
@@ -180,9 +180,10 @@ test <- df %>%
       is.na(h) | is.na(hr) | is.na(so) | is.na(bb) | is.na(hbp) | is.na(bf) | is.na(ip) ~ NA_real_,
       ip < babip_min_ip ~ NA_real_,
       babip_denominator <= 0 ~ NA_real_,
-      TRUE ~ (h - hr) / babip_denominator
+      TRUE ~ round(((h - hr) / babip_denominator), 3)
     )
-  )
+  ) %>% 
+  select(year, school, name, ip, fip, k_pct, bb_pct, k_bb, babip)
 
 ```
 
