@@ -3,6 +3,7 @@ ui <- dashboardPage(
   dashboardHeader(title = "NCAA Pitching Analysis Dashboard"),
   dashboardSidebar(
     sidebarMenu(
+      menuItem("Info", tabName = "info_tab"),
       menuItem("Leaderboard", tabName = "leaderboard_tab"),
       menuItem("Data", tabName = "data_tab"),
       menuItem("Analysis", tabName = "analysis_tab")
@@ -11,14 +12,58 @@ ui <- dashboardPage(
   dashboardBody(
     tabItems(
       tabItem(
+        tabName = "info_tab",
+        fluidRow(
+          box(
+            title = "Project Overview",
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            HTML("
+        <p>This NCAA Pitching Dashboard is part of an ongoing effort to build a custom database of college baseball pitching statistics.</p>
+        <p><strong>Project Goals:</strong></p>
+        <ul>
+          <li>Consolidate and explore NCAA pitching data across multiple years.</li>
+          <li>Provide a dashboard for quick filtering, analysis, and visualization of team and player performance.</li>
+        </ul>
+        <p><strong>Data Methodology:</strong></p>
+        <ul>
+          <li>All data is manually downloaded from <a href='https://www.sports-reference.com/cbb/' target='_blank'>Baseball Reference</a> by team and season.</li>
+          <li>Files are standardized and cleaned locally before being compiled into the dashboard.</li>
+          <li>This process is ongoing, and additional teams will be added over time.</li>
+        </ul>
+        <p>Built in <code>R</code> using <code>Shiny</code>, <code>tidyverse</code>, and <code>plotly</code>.</p>
+      ")
+          )
+        )
+      ),
+      
+      tabItem(
         tabName = "leaderboard_tab",
         fluidRow(
           box(
-            title = "Filter by Minimum Innings Pitched",
+            title = "Filter Individual Players by Minimum / Maxiumum Innings Pitched",
             status = "info",
             solidHeader = TRUE,
             width = 12,
             uiOutput("ip_slider_ui")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Top 5 Strikeouts (Team-Year)",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            DTOutput("top_so_teams")
+          ),
+          box(
+            title = "Top 5 Strikeouts (Player-Year)",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            DTOutput("top_so_players")
           )
         ),
         fluidRow(
@@ -40,14 +85,14 @@ ui <- dashboardPage(
         fluidRow(
           box(
             title = "Top 5 WHIP (Team-Year)",
-            status = "warning",
+            status = "primary",
             solidHeader = TRUE,
             width = 6,
             DTOutput("top_whip_teams")
           ),
           box(
             title = "Top 5 WHIP (Player-Year)",
-            status = "warning",
+            status = "primary",
             solidHeader = TRUE,
             width = 6,
             DTOutput("top_whip_players")

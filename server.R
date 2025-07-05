@@ -18,6 +18,34 @@ server <- function(input, output, session) {
   })
   
   
+  # Top 5 Strikeouts by Team-Year
+  output$top_so_teams <- renderDT({
+    
+    # req(input$ip_range)
+    
+    df %>%
+      # filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      mutate(year_team = paste(year, school)) %>%
+      group_by(year_team) %>%
+      summarize(so = round(sum(so, na.rm = TRUE), 0)) %>%
+      arrange(desc(so)) %>%
+      slice_head(n = 5) %>%
+      datatable(options = list(dom = 't'), rownames = FALSE)
+  })
+  
+  # Top 5 Strikeouts by Player-Year
+  output$top_so_players <- renderDT({
+    
+    req(input$ip_range)
+    
+    df %>%
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      mutate(school_year_player = paste(year, school, name)) %>%
+      select(school_year_player, ip, so) %>% 
+      arrange(desc(so)) %>%
+      slice_head(n = 5) %>%
+      datatable(options = list(dom = 't'), rownames = FALSE)
+  })
   
   # Top 5 ERA by Team-Year
   output$top_era_teams <- renderDT({
@@ -25,10 +53,10 @@ server <- function(input, output, session) {
     req(input$ip_range)
     
     df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      # filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
       mutate(year_team = paste(year, school)) %>%
       group_by(year_team) %>%
-      summarize(ip = round(mean(ip, na.rm = TRUE), 1), era = round(mean(era, na.rm = TRUE), 3)) %>%
+      summarize(era = round(mean(era, na.rm = TRUE), 3)) %>%
       arrange(era) %>%
       slice_head(n = 5) %>%
       datatable(options = list(dom = 't'), rownames = FALSE)
@@ -54,10 +82,10 @@ server <- function(input, output, session) {
     req(input$ip_range)
     
     df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
+      # filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
       mutate(year_team = paste(year, school)) %>%
       group_by(year_team) %>%
-      summarize(ip = round(mean(ip, na.rm = TRUE), 1), whip = round(mean(whip, na.rm = TRUE), 3)) %>%
+      summarize(whip = round(mean(whip, na.rm = TRUE), 3)) %>%
       arrange(whip) %>%
       slice_head(n = 5) %>%
       datatable(options = list(dom = 't'), rownames = FALSE)
@@ -254,19 +282,19 @@ server <- function(input, output, session) {
   ### Advanced Statistics Panel Server Logic ###
   
   # Observe school select/deselect all toggle
-  observeEvent(input$data_school_select_all, {
-    if (input$data_school_select_all) {
-      updateSelectInput(session, "data_schools", selected = schools)
+  observeEvent(input$adv_school_select_all, {
+    if (input$adv_school_select_all) {
+      updateSelectInput(session, "adv_schools", selected = schools)
     } else {
-      updateSelectInput(session, "data_schools", selected = character(0))
+      updateSelectInput(session, "adv_schools", selected = character(0))
     }
   }, ignoreInit = TRUE)
   
-  observeEvent(input$year_select_all, {
-    if (input$year_select_all) {
-      updateSelectInput(session, "years", selected = seasons)
+  observeEvent(input$adv_year_select_all, {
+    if (input$adv_year_select_all) {
+      updateSelectInput(session, "adv_years", selected = seasons)
     } else {
-      updateSelectInput(session, "years", selected = character(0))
+      updateSelectInput(session, "adv_years", selected = character(0))
     }
   }, ignoreInit = TRUE)
   
@@ -309,7 +337,7 @@ server <- function(input, output, session) {
           TRUE ~ round((h - hr) / babip_denominator, 3)
         )
       ) %>% 
-      select(year, school, name, ip, fip, k_pct, bb_pct, k_bb, babip)
+      select(year, school, name, w, l, w_l_percent, ip, bf, fip, k_pct, bb_pct, k_bb, babip)
   })
   
   # Reset advanced stats input controls

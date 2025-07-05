@@ -51,17 +51,17 @@ process_file <- function(file) {
     clean_names()
 }
 
-# # Summary of each file's column types
-# type_summary <- map_dfr(data_list, function(file) {
-#   df <- process_file(file)
-#   types <- map_chr(df, ~ class(.x)[1])  # get class of each column
-#   
-#   tibble(
-#     file = file,
-#     n_vars = ncol(df)
-#   ) %>%
-#     bind_cols(as_tibble_row(types))
-# })
+# Summary of each file's column types
+type_summary <- map_dfr(data_list, function(file) {
+  df <- process_file(file)
+  types <- map_chr(df, ~ class(.x)[1])  # get class of each column
+
+  tibble(
+    file = file,
+    n_vars = ncol(df)
+  ) %>%
+    bind_cols(as_tibble_row(types))
+})
 
 # Create standard file format 
 template_df <- read_csv(here("Data", "LSU", "sportsref_download_LSU_2025.csv")) %>% clean_names()
