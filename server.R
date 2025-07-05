@@ -20,17 +20,22 @@ server <- function(input, output, session) {
   
   # Top 5 Strikeouts by Team-Year
   output$top_so_teams <- renderDT({
-    
-    # req(input$ip_range)
-    
     df %>%
-      # filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
       mutate(year_team = paste(year, school)) %>%
       group_by(year_team) %>%
       summarize(so = round(sum(so, na.rm = TRUE), 0)) %>%
       arrange(desc(so)) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
+      datatable(
+        options = list(
+          paging = FALSE,
+          searching = FALSE,
+          info = FALSE,
+          ordering = TRUE,
+          scrollY = "200px",  # optional internal DT scroll
+          dom = 't'
+        ),
+        rownames = FALSE
+      )
   })
   
   # Top 5 Strikeouts by Player-Year
@@ -43,8 +48,17 @@ server <- function(input, output, session) {
       mutate(school_year_player = paste(year, school, name)) %>%
       select(school_year_player, ip, so) %>% 
       arrange(desc(so)) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
+      datatable(
+        options = list(
+          paging = FALSE,
+          searching = FALSE,
+          info = FALSE,
+          ordering = TRUE,
+          scrollY = "200px",  # optional internal DT scroll
+          dom = 't'
+        ),
+        rownames = FALSE
+      )
   })
   
   # Top 5 ERA by Team-Year
@@ -58,8 +72,17 @@ server <- function(input, output, session) {
       group_by(year_team) %>%
       summarize(era = round(mean(era, na.rm = TRUE), 3)) %>%
       arrange(era) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
+      datatable(
+        options = list(
+          paging = FALSE,
+          searching = FALSE,
+          info = FALSE,
+          ordering = TRUE,
+          scrollY = "200px",  # optional internal DT scroll
+          dom = 't'
+        ),
+        rownames = FALSE
+      )
   })
   
   # Top 5 ERA by Player-Year
@@ -72,8 +95,17 @@ server <- function(input, output, session) {
       mutate(school_year_player = paste(year, school, name)) %>%
       select(school_year_player, ip, era) %>% 
       arrange(era) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
+      datatable(
+        options = list(
+          paging = FALSE,
+          searching = FALSE,
+          info = FALSE,
+          ordering = TRUE,
+          scrollY = "200px",  # optional internal DT scroll
+          dom = 't'
+        ),
+        rownames = FALSE
+      )
   })
   
   # Top 5 WHIP by Team-Year
@@ -87,8 +119,17 @@ server <- function(input, output, session) {
       group_by(year_team) %>%
       summarize(whip = round(mean(whip, na.rm = TRUE), 3)) %>%
       arrange(whip) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
+      datatable(
+        options = list(
+          paging = FALSE,
+          searching = FALSE,
+          info = FALSE,
+          ordering = TRUE,
+          scrollY = "200px",  # optional internal DT scroll
+          dom = 't'
+        ),
+        rownames = FALSE
+      )
   })
   
   # Top 5 WHIP by Player-Year
@@ -101,8 +142,17 @@ server <- function(input, output, session) {
       mutate(school_year_player = paste(year, school, name)) %>%
       select(school_year_player, ip, whip) %>% 
       arrange(whip) %>%
-      slice_head(n = 5) %>%
-      datatable(options = list(dom = 't'), rownames = FALSE)
+      datatable(
+        options = list(
+          paging = FALSE,
+          searching = FALSE,
+          info = FALSE,
+          ordering = TRUE,
+          scrollY = "200px",  # optional internal DT scroll
+          dom = 't'
+        ),
+        rownames = FALSE
+      )
   })
   
   ### Data Menu Item ###

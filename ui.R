@@ -34,6 +34,7 @@ ui <- dashboardPage(
           <li>This process is ongoing, and additional teams will be added over time.</li>
         </ul>
         <p>Built in <code>R</code> using <code>Shiny</code>, <code>tidyverse</code>, and <code>plotly</code>.</p>
+        <p><strong>View full project and documentation on GitHub:</strong> <a href='https://github.com/twopatek/Baseball-Data-Analysis/blob/main/README.md' target='_blank'>github.com/twopatek/Baseball-Data-Analysis</a></p>
       ")
           )
         )
@@ -52,18 +53,24 @@ ui <- dashboardPage(
         ),
         fluidRow(
           box(
-            title = "Top 5 Strikeouts (Team-Year)",
+            title = "Top Strikeouts (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
-            DTOutput("top_so_teams")
+            div(
+              style = "height: 250px; overflow-y: scroll;",
+              DTOutput("top_so_teams")
+            )
           ),
           box(
             title = "Top 5 Strikeouts (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
-            DTOutput("top_so_players")
+            div(
+              style = "height: 250px; overflow-y: scroll;",
+              DTOutput("top_so_players")
+            )
           )
         ),
         fluidRow(
@@ -72,14 +79,20 @@ ui <- dashboardPage(
             status = "primary",
             solidHeader = TRUE,
             width = 6,
-            DTOutput("top_era_teams")
+            div(
+              style = "height: 250px; overflow-y: scroll;",
+              DTOutput("top_era_teams")
+            )
           ),
           box(
             title = "Top 5 ERA (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
-            DTOutput("top_era_players")
+            div(
+              style = "height: 250px; overflow-y: scroll;",
+              DTOutput("top_era_players")
+            )
           )
         ),
         fluidRow(
@@ -88,14 +101,20 @@ ui <- dashboardPage(
             status = "primary",
             solidHeader = TRUE,
             width = 6,
-            DTOutput("top_whip_teams")
+            div(
+              style = "height: 250px; overflow-y: scroll;",
+              DTOutput("top_whip_teams")
+              )
           ),
           box(
             title = "Top 5 WHIP (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
-            DTOutput("top_whip_players")
+            div(
+              style = "height: 250px; overflow-y: scroll;",
+              DTOutput("top_whip_players")
+            )
           )
         )
       ),
