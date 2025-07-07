@@ -331,6 +331,14 @@ server <- function(input, output, session) {
   
   ### Advanced Statistics Panel Server Logic ###
   
+  adv_stats_initialized <- reactiveVal(FALSE)
+  
+  observe({
+    if (!adv_stats_initialized()) {
+      updateActionButton(session, "calc_adv_stats", label = "Recalculate Advanced Stats")
+    }
+  })
+  
   # Observe school select/deselect all toggle
   observeEvent(input$adv_school_select_all, {
     if (input$adv_school_select_all) {
@@ -349,9 +357,13 @@ server <- function(input, output, session) {
   }, ignoreInit = TRUE)
   
   
-  # Reactive expression to filter dataset for advanced stats
-  filtered_adv_df <- eventReactive(input$calc_adv_stats, {
+  filtered_adv_df <- reactive({
     req(input$adv_schools, input$adv_years)
+    
+    # Mark first initialization so we don't re-trigger unintentionally
+    if (!adv_stats_initialized()) {
+      adv_stats_initialized(TRUE)
+    }
     
     df %>%
       filter(
@@ -386,9 +398,10 @@ server <- function(input, output, session) {
           babip_denominator <= 0 ~ NA_real_,
           TRUE ~ round((h - hr) / babip_denominator, 3)
         )
-      ) %>% 
+      ) %>%
       select(year, school, name, w, l, w_l_percent, ip, bf, fip, k_pct, bb_pct, k_bb, babip)
   })
+  
   
   # Reset advanced stats input controls
   observeEvent(input$reset_adv_stats, {
@@ -501,6 +514,142 @@ server <- function(input, output, session) {
              title = paste("Yearly", input$plot_var, "Analysis"),
              yaxis = list(title = input$plot_var),
              xaxis = list(title = "Year"))
+  })
+  
+  
+  ### Player Rating Tab ###
+  
+  output$shared_rating_inputs <- renderUI({
+    req(length(schools) > 0, length(seasons) > 0)
+    
+    tagList(
+      selectizeInput(
+        inputId = "rating_schools",
+        label = "Select School(s)",
+        choices = schools,
+        selected = first(schools),
+        multiple = TRUE,
+        options = list(
+          placeholder = 'Search or scroll to choose school(s)',
+          maxOptions = 1000,
+          plugins = list('remove_button'),
+          closeAfterSelect = FALSE
+        )
+      ),
+      checkboxInput("rating_select_all_schools", "Select/Deselect All Schools", value = FALSE),
+      selectizeInput(
+        inputId = "rating_years",
+        label = "Select Year(s)",
+        choices = seasons,
+        selected = max(seasons),
+        multiple = TRUE,
+        options = list(
+          placeholder = 'Search or scroll to choose year(s)',
+          plugins = list('remove_button'),
+          maxOptions = 1000
+        )
+      ),
+      checkboxInput("rating_select_all_years", "Select/Deselect All Years", value = FALSE)
+    )
+  })
+  
+  # Observe school select/deselect all toggle
+  observeEvent(input$rating_select_all_schools, {
+    if (input$rating_select_all_schools) {
+      updateSelectInput(session, "rating_schools", selected = schools)
+    } else {
+      updateSelectInput(session, "rating_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$rating_select_all_years, {
+    if (input$rating_select_all_years) {
+      updateSelectInput(session, "rating_years", selected = seasons)
+    } else {
+      updateSelectInput(session, "rating_years", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  ratings_data <- reactiveVal()
+  detailed_data <- reactiveVal()
+  
+  filtered_ratings_df <- reactive({
+    req(input$rating_schools, input$rating_years)
+    
+    df %>%
+      filter(
+        year %in% input$rating_years,
+        school %in% input$rating_schools
+      ) %>%
+      mutate(
+        fip = case_when(
+          is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
+          ip < 10 ~ NA_real_,  # Replace 10 with your desired fip_min_ip
+          TRUE ~ round(((13 * hr) + (3 * bb) - (2 * so)) / ip + 3.1, 3)
+        ),
+        k_pct = case_when(
+          is.na(so) | is.na(bf) | bf < 10 ~ NA_real_,
+          TRUE ~ round(so / bf, 3)
+        ),
+        bb_pct = case_when(
+          is.na(bb) | is.na(bf) | bf < 10 ~ NA_real_,
+          TRUE ~ round(bb / bf, 3)
+        )
+      )
+  })
+  
+  observe({
+    df <- filtered_ratings_df()
+    req(df)
+    if (nrow(df) == 0) return(NULL)
+    
+    initial_ratings <- generate_player_ratings(df, rating_stats, stat_weights)
+    ratings_data(initial_ratings$summary)
+    detailed_data(initial_ratings$detailed)
+    
+  })
+  
+  # Ratings Table (Simplified — no column selection)
+  output$ratings_table <- renderDT({
+    req(input$rating_years, input$rating_schools)
+    req(ratings_data())
+    
+    ratings_data() %>%
+      filter(year == input$rating_years, school == input$rating_schools)
+  },
+  options = list(pageLength = -1, scrollY = "500px", scrollX = TRUE, paging = FALSE)
+  )
+  
+  # Methodology Table
+  output$methodology_table <- renderDT({
+    req(input$rating_years, input$rating_schools)
+    req(detailed_data())
+    
+    detailed_data() %>%
+      filter(year == input$rating_years, school == input$rating_schools)
+  },
+  options = list(pageLength = -1, scrollY = "500px", scrollX = TRUE, paging = FALSE)
+  )
+  
+  # Recalculate logic placeholder
+  observeEvent(input$update_ratings, {
+    updated_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
+    names(updated_weights) <- paste0(rating_stats$stat, "_rating")
+    
+    updated_priors <- sapply(rating_stats$stat, function(stat) input[[paste0("prior_", stat)]])
+    
+    updated_rating_stats <- rating_stats %>%
+      mutate(prior_weight = updated_priors)
+    
+    # IMPORTANT: use `filtered_ratings_df()` or the dataset that contains the derived vars
+    rating_input_df <- filtered_ratings_df() %>%
+      filter(ip > 0)  # Optional: filter based on IP cutoff
+    
+    # Run ratings generation
+    new_ratings <- generate_player_ratings(rating_input_df, updated_rating_stats, updated_weights)
+    
+    ratings_data(new_ratings$summary)
+    detailed_data(new_ratings$detailed)
   })
   
 }

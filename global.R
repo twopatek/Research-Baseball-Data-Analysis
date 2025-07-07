@@ -1,6 +1,6 @@
 # Load and install packages
 
-pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, rsconnect)
+pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, rsconnect, scales)
 
 # install.packages("http://cran.r-project.org/src/contrib/Archive/curl/curl_6.2.3.tar.gz", repos=NULL, type="source")
 # install.packages("rsconnect", type = "binary")
@@ -48,7 +48,7 @@ read_and_clean <- function(file, col_types) {
   # Extract school and year from filename
   file_base <- basename(file)
   
-  school <- str_extract(file_base, "(?<=sportsref_download_).+?(?=_[0-9]{4})")
+  school <- str_extract(file_base, "(?<=sportsref_download_).*?(?=_[0-9]{4})")
   year   <- str_extract(file_base, "\\d{4}")
   
   df <- df %>%
@@ -67,6 +67,7 @@ all_data <- map_dfr(data_list, ~ suppressWarnings(read_and_clean(.x, col_types_t
 df <- all_data %>% 
   mutate(name = str_replace_all(name, "[^A-Za-z ]", "")) %>% 
   filter(!is.na(rk)) %>% 
+  filter(year > 2011) %>% 
   select(-notes) %>% 
   relocate(year, .before = everything()) %>% 
   relocate(school, .after = year)
@@ -78,6 +79,143 @@ max_ip <- ceiling(max(df$ip, na.rm = TRUE))
 # Identify seasons
 schools <- sort(unique(as.character(df$school)))
 seasons <- sort(unique(as.character(df$year)))
+
+# Define stats to rate and their direction
+rating_stats <- tibble::tribble(
+  ~stat,     ~higher_is_better, ~prior_weight,
+  "era",     FALSE,             40,
+  "fip",     FALSE,             30,
+  "so9",     TRUE,              15,
+  "bb9",     FALSE,             20,
+  "hr9",     FALSE,             25,
+  "whip",    FALSE,             25,
+  "so_w",    TRUE,              10,
+  "k_pct",   TRUE,              15,
+  "bb_pct",  FALSE,             15
+)
+
+# Define stat weights for composite
+stat_weights <- c(
+  era_rating    = 0.20,
+  fip_rating    = 0.20,
+  so9_rating    = 0.15,
+  bb9_rating    = 0.10,
+  hr9_rating    = 0.10,
+  whip_rating   = 0.10,
+  so_w_rating   = 0.05,
+  k_pct_rating  = 0.05,
+  bb_pct_rating = 0.05
+)
+
+generate_player_ratings <- function(df, rating_stats, stat_weights) {
+  
+  req(df)
+  validate(need(nrow(df) > 0, "No data available for selected filters."))
+  
+  # Compute league averages per year
+  league_avgs <- df %>%
+    filter(ip > 0) %>%
+    group_by(year) %>%
+    summarize(across(
+      all_of(rating_stats$stat),
+      ~ round(mean(.x, na.rm = TRUE), 3), 
+      .names = "avg_{.col}"
+    ), .groups = "drop")
+  
+  df_joined <- df %>% left_join(league_avgs, by = "year")
+  
+  # Create named vector for priors
+  prior_weights <- rating_stats$prior_weight
+  names(prior_weights) <- rating_stats$stat
+  
+  # Shrinkage
+  shrunk_stats <- map2_dfc(
+    rating_stats$stat,
+    prior_weights,
+    ~ {
+      stat <- .x
+      prior <- .y
+      avg_col <- paste0("avg_", stat)
+      shrunk_col <- paste0("shrunk_", stat)
+      
+      tibble(!!shrunk_col := case_when(
+        df_joined$ip > 0 &
+          is.finite(df_joined[[stat]]) &
+          is.finite(df_joined[[avg_col]]) ~
+          round(
+            (df_joined$ip * df_joined[[stat]] + prior * df_joined[[avg_col]]) /
+              (df_joined$ip + prior),
+            3
+          ),
+        TRUE ~ NA_real_
+      ))
+    }
+  )
+  
+  df_joined <- bind_cols(df_joined, shrunk_stats)
+  
+  # Add rating column metadata
+  rating_stats <- rating_stats %>%
+    mutate(
+      shrunk_col = paste0("shrunk_", stat),
+      rating_col = paste0(stat, "_rating"),
+      invert = !higher_is_better
+    )
+  
+  # Rescale ratings
+  rescale_ratings_by_year <- function(df_group) {
+    rating_cols <- pmap_dfc(
+      rating_stats,
+      function(stat, higher_is_better, prior_weight, shrunk_col, rating_col, invert) {
+        values <- df_group[[shrunk_col]]
+        values <- if (invert) -values else values
+        tibble(!!rating_col := round(rescale(values, to = c(0, 100), na.rm = TRUE), 0))
+      }
+    )
+    bind_cols(df_group, rating_cols)
+  }
+  
+  df_ratings <- df_joined %>%
+    group_by(year) %>%
+    group_split() %>%
+    map_dfr(rescale_ratings_by_year) %>%
+    ungroup()
+  
+  # Composite score
+  valid_weights <- stat_weights[names(stat_weights) %in% colnames(df_ratings)]
+  rating_names <- names(valid_weights)
+  
+  df_ratings <- df_ratings %>%
+    mutate(
+      composite_rating = round(
+        rowSums(
+          select(., all_of(rating_names)) * rep(valid_weights, each = nrow(.)),
+          na.rm = TRUE
+        ),
+        0
+      )
+    )
+  
+  # Output tables
+  core_cols <- c("year", "school", "name", "ip", "composite_rating")
+  stat_column_blocks <- lapply(rating_stats$stat, function(stat) {
+    c(stat, paste0("avg_", stat), paste0("shrunk_", stat), paste0(stat, "_rating"))
+  })
+  
+  final_detailed_cols <- c(core_cols, unlist(stat_column_blocks))
+  
+  detailed <- df_ratings %>%
+    select(all_of(final_detailed_cols)) %>%
+    arrange(desc(composite_rating))
+  
+  summary <- df_ratings %>%
+    select(all_of(c(core_cols, rating_names))) %>%
+    arrange(desc(composite_rating))
+  
+  return(list(summary = summary, detailed = detailed))
+}
+
+
 
 
 

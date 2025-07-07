@@ -6,7 +6,8 @@ ui <- dashboardPage(
       menuItem("Info", tabName = "info_tab"),
       menuItem("Leaderboard", tabName = "leaderboard_tab"),
       menuItem("Data", tabName = "data_tab"),
-      menuItem("Analysis", tabName = "analysis_tab")
+      menuItem("Analysis", tabName = "analysis_tab"),
+      menuItem("Player Ratings", tabName = "ratings_tab")
     )
   ),
   dashboardBody(
@@ -279,10 +280,8 @@ ui <- dashboardPage(
                                numericInput("babip_min_ip", "Min IP (BABIP)", value = 10)
                              )
                            ),
-                           
+                          
                            br(),
-                           actionButton("calc_adv_stats", "Calculate Advanced Stats"),
-                           br(), br(),
                            actionButton("reset_adv_stats", "Reset")
                          )
                        ),
@@ -330,9 +329,82 @@ ui <- dashboardPage(
             )
           )
         )
+      ),
+      
+      tabItem(tabName = "ratings_tab",
+              fluidRow(
+                # Left Panel for inputs
+                column(
+                  width = 4,
+                  box(width = 12, 
+                      title = "Select Filters", 
+                      status = "primary", 
+                      solidHeader = TRUE,
+                      uiOutput("shared_rating_inputs")
+                  ),
+                  box(width = 12, title = "Adjust Weights and Priors", status = "warning", solidHeader = TRUE,
+                      fluidRow(
+                        column(6,
+                               lapply(seq(1, ceiling(nrow(rating_stats) / 2)), function(i) {
+                                 stat <- rating_stats$stat[i]
+                                 tagList(
+                                   numericInput(paste0("weight_", stat), paste0("Weight: ", stat),
+                                                value = stat_weights[paste0(stat, "_rating")], step = 0.01, min = 0, max = 1),
+                                   numericInput(paste0("prior_", stat), paste0("Prior: ", stat),
+                                                value = rating_stats$prior_weight[i], step = 1)
+                                 )
+                               })
+                        ),
+                        column(6,
+                               lapply(seq(ceiling(nrow(rating_stats) / 2) + 1, nrow(rating_stats)), function(i) {
+                                 stat <- rating_stats$stat[i]
+                                 tagList(
+                                   numericInput(paste0("weight_", stat), paste0("Weight: ", stat),
+                                                value = stat_weights[paste0(stat, "_rating")], step = 0.01, min = 0, max = 1),
+                                   numericInput(paste0("prior_", stat), paste0("Prior: ", stat),
+                                                value = rating_stats$prior_weight[i], step = 1)
+                                 )
+                               })
+                        )
+                      ),
+                      actionButton("update_ratings", "Recalculate Ratings", class = "btn-primary")
+                  )
+                ),
+                
+                # Right Panel for outputs
+                column(
+                  width = 8,
+                  tabBox(width = 12,
+                         tabPanel("Player Ratings", DTOutput("ratings_table")),
+                         tabPanel("Methodology", DTOutput("methodology_table")),
+                         tabPanel("Info",
+                                  fluidRow(
+                                    box(
+                                      width = 12,
+                                      title = "Player Rating Methodology",
+                                      status = "info",
+                                      solidHeader = TRUE,
+                                      collapsible = TRUE,
+                                      HTML("
+        <p>This player rating system evaluates NCAA Division I pitchers based on a weighted combination of performance metrics. The process includes:</p>
+        <ul>
+          <li><strong>Stat Selection:</strong> ERA, FIP, SO/9, BB/9, HR/9, WHIP, SO/W, K%, BB%.</li>
+          <li><strong>League Averages:</strong> Computed by year to establish context.</li>
+          <li><strong>Shrinkage:</strong> Each pitcher's stat is 'shrunk' toward the league average based on innings pitched and a prior weight.</li>
+          <li><strong>Stat Rating:</strong> Pitchers are rated for each stat on a percentile basis (0–100 scale).</li>
+          <li><strong>Composite Rating:</strong> Weighted average of individual stat ratings using user-defined weights.</li>
+        </ul>
+        <p>You can customize the weights and prior shrinkage values in the 'Methodology' tab.</p>
+      ")
+                                    )
+                                  )
+                         )
+                         
+                  )
+                )
+              )
       )
     )
   )
 )
-
 
