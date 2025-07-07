@@ -160,18 +160,18 @@ server <- function(input, output, session) {
   # Render dynamic school selector
   observe({
     if (input$data_school_select_all) {
-      updateSelectInput(session, "data_schools", selected = schools)
+      updateSelectizeInput(session, "data_schools", selected = schools)
     } else {
-      updateSelectInput(session, "data_schools", selected = first(schools))
+      updateSelectizeInput(session, "data_schools", selected = first(schools))
     }
   })
   
   # Render dynamic year selector
   observe({
     if (input$year_select_all) {
-      updateSelectInput(session, "years", selected = seasons)
+      updateSelectizeInput(session, "years", selected = seasons)
     } else {
-      updateSelectInput(session, "years", selected = max(seasons))
+      updateSelectizeInput(session, "years", selected = max(seasons))
     }
   })
   
@@ -193,10 +193,10 @@ server <- function(input, output, session) {
   
   # Button to reset raw data table
   observeEvent(input$reset_data_table, {
-    updateSelectInput(session, "data_schools", selected = first(schools))
+    updateSelectizeInput(session, "data_schools", selected = first(schools))
     updateCheckboxInput(session, "data_school_select_all", value = FALSE)
     
-    updateSelectInput(session, "years", selected = "2025")
+    updateSelectizeInput(session, "years", selected = "2025")
     updateCheckboxInput(session, "year_select_all", value = FALSE)
     
     updateSliderInput(session, "var", value = c(1, max(df$ip, na.rm = TRUE)))
@@ -246,9 +246,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$report_school_select_all, {
     if (input$report_school_select_all) {
-      updateSelectInput(session, "report_schools", selected = schools)
+      updateSelectizeInput(session, "report_schools", selected = schools)
     } else {
-      updateSelectInput(session, "report_schools", selected = character(0))
+      updateSelectizeInput(session, "report_schools", selected = character(0))
     }
   }, ignoreInit = TRUE)
   
@@ -342,17 +342,17 @@ server <- function(input, output, session) {
   # Observe school select/deselect all toggle
   observeEvent(input$adv_school_select_all, {
     if (input$adv_school_select_all) {
-      updateSelectInput(session, "adv_schools", selected = schools)
+      updateSelectizeInput(session, "adv_schools", selected = schools)
     } else {
-      updateSelectInput(session, "adv_schools", selected = character(0))
+      updateSelectizeInput(session, "adv_schools", selected = character(0))
     }
   }, ignoreInit = TRUE)
   
   observeEvent(input$adv_year_select_all, {
     if (input$adv_year_select_all) {
-      updateSelectInput(session, "adv_years", selected = seasons)
+      updateSelectizeInput(session, "adv_years", selected = seasons)
     } else {
-      updateSelectInput(session, "adv_years", selected = character(0))
+      updateSelectizeInput(session, "adv_years", selected = character(0))
     }
   }, ignoreInit = TRUE)
   
@@ -405,10 +405,10 @@ server <- function(input, output, session) {
   
   # Reset advanced stats input controls
   observeEvent(input$reset_adv_stats, {
-    updateSelectInput(session, "adv_schools", selected = first(schools))
+    updateSelectizeInput(session, "adv_schools", selected = first(schools))
     updateCheckboxInput(session, "adv_school_select_all", value = TRUE)
     
-    updateSelectInput(session, "adv_years", selected = "2025")
+    updateSelectizeInput(session, "adv_years", selected = "2025")
     updateCheckboxInput(session, "adv_year_select_all", value = TRUE)
     
     updateNumericInput(session, "hr_weight", value = 13)
@@ -520,7 +520,6 @@ server <- function(input, output, session) {
   ### Player Rating Tab ###
   
   output$shared_rating_inputs <- renderUI({
-    req(length(schools) > 0, length(seasons) > 0)
     
     tagList(
       selectizeInput(
@@ -545,8 +544,9 @@ server <- function(input, output, session) {
         multiple = TRUE,
         options = list(
           placeholder = 'Search or scroll to choose year(s)',
+          maxOptions = 1000,
           plugins = list('remove_button'),
-          maxOptions = 1000
+          closeAfterSelect = FALSE
         )
       ),
       checkboxInput("rating_select_all_years", "Select/Deselect All Years", value = FALSE)
@@ -556,17 +556,17 @@ server <- function(input, output, session) {
   # Observe school select/deselect all toggle
   observeEvent(input$rating_select_all_schools, {
     if (input$rating_select_all_schools) {
-      updateSelectInput(session, "rating_schools", selected = schools)
+      updateSelectizeInput(session, "rating_schools", selected = schools)
     } else {
-      updateSelectInput(session, "rating_schools", selected = character(0))
+      updateSelectizeInput(session, "rating_schools", selected = first(schools))
     }
   }, ignoreInit = TRUE)
-  
+
   observeEvent(input$rating_select_all_years, {
     if (input$rating_select_all_years) {
-      updateSelectInput(session, "rating_years", selected = seasons)
+      updateSelectizeInput(session, "rating_years", selected = seasons)
     } else {
-      updateSelectInput(session, "rating_years", selected = character(0))
+      updateSelectizeInput(session, "rating_years", selected = max(seasons))
     }
   }, ignoreInit = TRUE)
   
@@ -633,8 +633,15 @@ server <- function(input, output, session) {
   
   # Recalculate logic placeholder
   observeEvent(input$update_ratings, {
-    updated_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
-    names(updated_weights) <- paste0(rating_stats$stat, "_rating")
+    raw_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
+    names(raw_weights) <- paste0(rating_stats$stat, "_rating")
+    
+    weight_sum <- sum(raw_weights, na.rm = TRUE)
+    if (weight_sum == 0) {
+      normalized_weights <- rep(1 / length(raw_weights), length(raw_weights))  # fallback: equal weights
+    } else {
+      normalized_weights <- raw_weights / weight_sum
+    }
     
     updated_priors <- sapply(rating_stats$stat, function(stat) input[[paste0("prior_", stat)]])
     
@@ -646,10 +653,32 @@ server <- function(input, output, session) {
       filter(ip > 0)  # Optional: filter based on IP cutoff
     
     # Run ratings generation
-    new_ratings <- generate_player_ratings(rating_input_df, updated_rating_stats, updated_weights)
+    new_ratings <- generate_player_ratings(rating_input_df, updated_rating_stats, normalized_weights)
     
     ratings_data(new_ratings$summary)
     detailed_data(new_ratings$detailed)
+  })
+  
+  # Reset methodology stats
+  observeEvent(input$reset_rating_inputs, {
+    for (stat in rating_stats$stat) {
+      updateNumericInput(session, paste0("weight_", stat),
+                         value = stat_weights[[paste0(stat, "_rating")]])
+      
+      updateNumericInput(session, paste0("prior_", stat),
+                         value = rating_stats$prior_weight[rating_stats$stat == stat])
+    }
+  })
+  
+  output$weight_sum_warning <- renderText({
+    raw_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
+    total <- round(sum(raw_weights, na.rm = TRUE), 3)
+    
+    if (abs(total - 1) > 0.01) {
+      paste("⚠️ Weights sum to", total, "- they will be normalized to 1.0.")
+    } else {
+      paste("✓ Weights sum to", total)
+    }
   })
   
 }

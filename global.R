@@ -107,6 +107,9 @@ stat_weights <- c(
   bb_pct_rating = 0.05
 )
 
+rating_stats <- rating_stats %>% arrange(stat)
+stat_weights <- stat_weights[order(names(stat_weights))]
+
 generate_player_ratings <- function(df, rating_stats, stat_weights) {
   
   req(df)

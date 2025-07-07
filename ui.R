@@ -2,7 +2,7 @@
 ui <- dashboardPage(
   dashboardHeader(title = "NCAA Pitching Analysis Dashboard"),
   dashboardSidebar(
-    sidebarMenu(
+    sidebarMenu(id = "tabs",
       menuItem("Info", tabName = "info_tab"),
       menuItem("Leaderboard", tabName = "leaderboard_tab"),
       menuItem("Data", tabName = "data_tab"),
@@ -182,7 +182,7 @@ ui <- dashboardPage(
         )
       ),
       tabItem(
-        "analysis_tab",
+        tabName = "analysis_tab",
         fluidRow(
           tabBox(
             width = 12,
@@ -207,7 +207,7 @@ ui <- dashboardPage(
                                maxOptions = 1000
                              )
                            ),
-                           checkboxInput("report_school_select_all", "Select/Deselect All Schools", value = TRUE),
+                           checkboxInput("report_school_select_all", "Select/Deselect All Schools", value = FALSE),
                            uiOutput("report_var_selector"),
                            actionButton("summary_stats", "Calculate Summary Stats"),
                            br(), br(), 
@@ -250,18 +250,22 @@ ui <- dashboardPage(
                                maxOptions = 1000
                              )
                            ),
-                           checkboxInput("adv_school_select_all", "Select/Deselect All Schools", value = TRUE),
+                           checkboxInput("adv_school_select_all", "Select/Deselect All Schools", value = FALSE),
                            
-                           selectInput(
+                           selectizeInput(
                              inputId = "adv_years",
                              label = "Select Year(s)",
                              choices = seasons,
-                             selected = "2025",
-                             multiple = TRUE
+                             selected = max(seasons),
+                             multiple = TRUE,
+                             options = list(
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
+                             )
                            ),
-                           checkboxInput("adv_year_select_all", "Select/Deselect All Years", value = TRUE),
+                           checkboxInput("adv_year_select_all", "Select/Deselect All Years", value = FALSE),
                            
-                           # NEW: Wrap stat inputs in two columns
                            fluidRow(
                              column(
                                width = 6,
@@ -292,7 +296,7 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "primary",
                            width = 12,
-                           DTOutput("adv_stats_output")  # This will be your rendered table
+                           DTOutput("adv_stats_output")  
                          )
                        )
                      )
@@ -335,56 +339,101 @@ ui <- dashboardPage(
               fluidRow(
                 # Left Panel for inputs
                 column(
-                  width = 4,
+                  width = 3,
                   box(width = 12, 
                       title = "Select Filters", 
-                      status = "primary", 
+                      status = "info", 
                       solidHeader = TRUE,
-                      uiOutput("shared_rating_inputs")
+                      uiOutput("shared_rating_inputs"),
+                      actionButton("update_ratings", "Recalculate Ratings", class = "btn-primary"),
+                      br(), br(),
+                      actionButton("reset_rating_inputs", "Reset Weights & Priors", class = "btn-secondary")
                   ),
-                  box(width = 12, title = "Adjust Weights and Priors", status = "warning", solidHeader = TRUE,
+                  
+                  box(width = 12, title = "Prior Weights (Shrinkage Factors)", status = "info", solidHeader = TRUE,
                       fluidRow(
                         column(6,
-                               lapply(seq(1, ceiling(nrow(rating_stats) / 2)), function(i) {
-                                 stat <- rating_stats$stat[i]
-                                 tagList(
-                                   numericInput(paste0("weight_", stat), paste0("Weight: ", stat),
-                                                value = stat_weights[paste0(stat, "_rating")], step = 0.01, min = 0, max = 1),
-                                   numericInput(paste0("prior_", stat), paste0("Prior: ", stat),
-                                                value = rating_stats$prior_weight[i], step = 1)
+                               lapply(sort(rating_stats$stat)[1:ceiling(length(rating_stats$stat)/2)], function(stat) {
+                                 numericInput(
+                                   inputId = paste0("prior_", stat),
+                                   label = paste("Prior:", stat),
+                                   value = rating_stats$prior_weight[rating_stats$stat == stat],
+                                   step = 1
                                  )
                                })
                         ),
                         column(6,
-                               lapply(seq(ceiling(nrow(rating_stats) / 2) + 1, nrow(rating_stats)), function(i) {
-                                 stat <- rating_stats$stat[i]
-                                 tagList(
-                                   numericInput(paste0("weight_", stat), paste0("Weight: ", stat),
-                                                value = stat_weights[paste0(stat, "_rating")], step = 0.01, min = 0, max = 1),
-                                   numericInput(paste0("prior_", stat), paste0("Prior: ", stat),
-                                                value = rating_stats$prior_weight[i], step = 1)
+                               lapply(sort(rating_stats$stat)[(ceiling(length(rating_stats$stat)/2) + 1):length(rating_stats$stat)], function(stat) {
+                                 numericInput(
+                                   inputId = paste0("prior_", stat),
+                                   label = paste("Prior:", stat),
+                                   value = rating_stats$prior_weight[rating_stats$stat == stat],
+                                   step = 1
                                  )
                                })
                         )
-                      ),
-                      actionButton("update_ratings", "Recalculate Ratings", class = "btn-primary")
+                      )
+                  ),
+                  
+                  box(width = 12, title = "Composite Rating Weights", status = "info", solidHeader = TRUE,
+                      textOutput("weight_sum_warning"),
+                      fluidRow(
+                        column(6,
+                               lapply(sort(rating_stats$stat)[1:ceiling(length(rating_stats$stat)/2)], function(stat) {
+                                 numericInput(
+                                   inputId = paste0("weight_", stat),
+                                   label = paste("Weight:", stat),
+                                   value = stat_weights[[paste0(stat, "_rating")]],
+                                   step = 0.01, min = 0, max = 1
+                                 )
+                               })
+                        ),
+                        column(6,
+                               lapply(sort(rating_stats$stat)[(ceiling(length(rating_stats$stat)/2) + 1):length(rating_stats$stat)], function(stat) {
+                                 numericInput(
+                                   inputId = paste0("weight_", stat),
+                                   label = paste("Weight:", stat),
+                                   value = stat_weights[[paste0(stat, "_rating")]],
+                                   step = 0.01, min = 0, max = 1
+                                 )
+                               })
+                        )
+                      )
                   )
+                  
                 ),
                 
                 # Right Panel for outputs
                 column(
-                  width = 8,
+                  width = 9,
                   tabBox(width = 12,
-                         tabPanel("Player Ratings", DTOutput("ratings_table")),
-                         tabPanel("Methodology", DTOutput("methodology_table")),
+                         tabPanel("Player Ratings",
+                                  fluidRow(
+                                    box(
+                                      width = 12,
+                                      title = "Player Ratings",
+                                      status = "primary",
+                                      solidHeader = TRUE,
+                                      DTOutput("ratings_table"))
+                                    )
+                                  ),
+                         tabPanel("Methodology",
+                                  fluidRow(
+                                    box(
+                                      width = 12,
+                                      title = "Methodology Data",
+                                      status = "primary",
+                                      solidHeader = TRUE,
+                                      DTOutput("methodology_table"))
+                                    )
+                                  ),
                          tabPanel("Info",
                                   fluidRow(
                                     box(
                                       width = 12,
-                                      title = "Player Rating Methodology",
-                                      status = "info",
+                                      title = "Methodology Expanded",
+                                      status = "primary",
                                       solidHeader = TRUE,
-                                      collapsible = TRUE,
                                       HTML("
         <p>This player rating system evaluates NCAA Division I pitchers based on a weighted combination of performance metrics. The process includes:</p>
         <ul>
