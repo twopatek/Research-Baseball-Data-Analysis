@@ -406,10 +406,10 @@ server <- function(input, output, session) {
   # Reset advanced stats input controls
   observeEvent(input$reset_adv_stats, {
     updateSelectizeInput(session, "adv_schools", selected = first(schools))
-    updateCheckboxInput(session, "adv_school_select_all", value = TRUE)
+    updateCheckboxInput(session, "adv_school_select_all", value = FALSE)
     
     updateSelectizeInput(session, "adv_years", selected = "2025")
-    updateCheckboxInput(session, "adv_year_select_all", value = TRUE)
+    updateCheckboxInput(session, "adv_year_select_all", value = FALSE)
     
     updateNumericInput(session, "hr_weight", value = 13)
     updateNumericInput(session, "bb_weight", value = 3)
@@ -615,7 +615,7 @@ server <- function(input, output, session) {
     req(ratings_data())
     
     ratings_data() %>%
-      filter(year == input$rating_years, school == input$rating_schools)
+      filter(year %in% input$rating_years, school %in% input$rating_schools)
   },
   options = list(pageLength = -1, scrollY = "500px", scrollX = TRUE, paging = FALSE)
   )
@@ -626,7 +626,7 @@ server <- function(input, output, session) {
     req(detailed_data())
     
     detailed_data() %>%
-      filter(year == input$rating_years, school == input$rating_schools)
+      filter(year %in% input$rating_years, school %in% input$rating_schools)
   },
   options = list(pageLength = -1, scrollY = "500px", scrollX = TRUE, paging = FALSE)
   )
