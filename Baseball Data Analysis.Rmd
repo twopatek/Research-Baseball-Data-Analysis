@@ -8,35 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, scales)
+pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, scales, tictoc)
 ```
-
-
-```{r data sourcing}
-pitching_programs <- tribble(
-  ~team,             ~notes,
-  "Vanderbilt",        "Elite development; produced Price, Rocker, Leiter",
-  "Florida",           "Consistent high-round draft picks; deep rotation",
-  "UCLA",              "Pitching-first culture; Bauer, Cole, Garcia",
-  "LSU",               "Strong pitching tradition in powerhouse program",
-  "Arkansas",          "SEC standout; produced Kevin Kopps, Hagen Smith",
-  "Mississippi State", "Pitching-focused with strong recent arms",
-  "Texas A&M",         "Underrated pitching development",
-  "Wake Forest",       "Analytical leader in biomechanics and pitching velocity",
-  "Louisville",        "Solid college arms; Detmers, Funkhouser",
-  "Stanford",          "West Coast development hub with pro-ready arms",
-  "North Carolina",    "Historic pitching success; Bard, Harvey",
-  "Oregon State",      "Efficient, well-coached staff; consistent results",
-  "South Carolina",    "Known for elite pitching in championship era",
-  "Tennessee",         "Recent pitching surge; Dollander, Beam",
-  "TCU",               "Big 12 leader in pitching depth and development",
-  "Florida State",     "Consistant NCAA Tournament appearences"
-)
-
-pitching_programs
-
-```
-
 
 ```{r Baseball Reference, warning=FALSE}
 # Path to all files
@@ -51,6 +24,7 @@ process_file <- function(file) {
     clean_names()
 }
 
+# tic()
 # # Summary of each file's column types
 # type_summary <- map_dfr(data_list, function(file) {
 #   df <- process_file(file)
@@ -62,6 +36,7 @@ process_file <- function(file) {
 #   ) %>%
 #     bind_cols(as_tibble_row(types))
 # })
+# toc()
 
 # Create standard file format 
 template_df <- read_csv(here("Data", "LSU", "sportsref_download_LSU_2025.csv")) %>% clean_names()

@@ -3,7 +3,6 @@ server <- function(input, output, session) {
   
   ### Leaderboard Menu Item ###
   
-  # Render slider input
   output$ip_slider_ui <- renderUI({
     req(df)
     
@@ -32,7 +31,7 @@ server <- function(input, output, session) {
           searching = FALSE,
           info = FALSE,
           ordering = TRUE,
-          scrollY = "200px",  
+          scrollY = "200px",  # optional internal DT scroll
           dom = 't'
         ),
         rownames = FALSE
@@ -55,7 +54,7 @@ server <- function(input, output, session) {
           searching = FALSE,
           info = FALSE,
           ordering = TRUE,
-          scrollY = "200px", 
+          scrollY = "200px",  # optional internal DT scroll
           dom = 't'
         ),
         rownames = FALSE
@@ -68,6 +67,7 @@ server <- function(input, output, session) {
     req(input$ip_range)
     
     df %>%
+      # filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
       mutate(year_team = paste(year, school)) %>%
       group_by(year_team) %>%
       summarize(era = round(mean(era, na.rm = TRUE), 3)) %>%
@@ -78,7 +78,7 @@ server <- function(input, output, session) {
           searching = FALSE,
           info = FALSE,
           ordering = TRUE,
-          scrollY = "200px",  
+          scrollY = "200px",  # optional internal DT scroll
           dom = 't'
         ),
         rownames = FALSE
@@ -101,7 +101,7 @@ server <- function(input, output, session) {
           searching = FALSE,
           info = FALSE,
           ordering = TRUE,
-          scrollY = "200px",  
+          scrollY = "200px",  # optional internal DT scroll
           dom = 't'
         ),
         rownames = FALSE
@@ -114,6 +114,7 @@ server <- function(input, output, session) {
     req(input$ip_range)
     
     df %>%
+      # filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
       mutate(year_team = paste(year, school)) %>%
       group_by(year_team) %>%
       summarize(whip = round(mean(whip, na.rm = TRUE), 3)) %>%
@@ -124,7 +125,7 @@ server <- function(input, output, session) {
           searching = FALSE,
           info = FALSE,
           ordering = TRUE,
-          scrollY = "200px",  
+          scrollY = "200px",  # optional internal DT scroll
           dom = 't'
         ),
         rownames = FALSE
@@ -147,7 +148,7 @@ server <- function(input, output, session) {
           searching = FALSE,
           info = FALSE,
           ordering = TRUE,
-          scrollY = "200px",  
+          scrollY = "200px",  # optional internal DT scroll
           dom = 't'
         ),
         rownames = FALSE
@@ -156,14 +157,60 @@ server <- function(input, output, session) {
   
   ### Data Menu Item ###
   
+  # Render dynamic school selector
+  observe({
+    if (input$data_school_select_all) {
+      updateSelectizeInput(session, "data_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "data_schools", selected = first(schools))
+    }
+  })
+  
+  # Render dynamic year selector
+  observe({
+    if (input$year_select_all) {
+      updateSelectizeInput(session, "years", selected = seasons)
+    } else {
+      updateSelectizeInput(session, "years", selected = max(seasons))
+    }
+  })
+  
+  # Render dynamic slider to filter innings pitched
+  output$ip_slider <- renderUI({
+    req(df)
+    
+    min_ip <- floor(min(df$ip, na.rm = TRUE))
+    max_ip <- ceiling(max(df$ip, na.rm = TRUE))
+    
+    sliderInput(
+      "var",
+      label = "Choose the minimum or maximum innings pitched",
+      min = min_ip,
+      max = max_ip,
+      value = c(1, max_ip)
+    )
+  })
+  
+  # Button to reset raw data table
+  observeEvent(input$reset_data_table, {
+    updateSelectizeInput(session, "data_schools", selected = first(schools))
+    updateCheckboxInput(session, "data_school_select_all", value = FALSE)
+    
+    updateSelectizeInput(session, "years", selected = "2025")
+    updateCheckboxInput(session, "year_select_all", value = FALSE)
+    
+    updateSliderInput(session, "var", value = c(1, max(df$ip, na.rm = TRUE)))
+  })
+  
+
   # Reactive raw data
   filtered_raw_df <- reactive({
-    req(input$data_schools, input$data_years, input$var)
+    req(input$data_schools, input$years, input$var)
     
     df %>%
       filter(
         school %in% input$data_schools,
-        year %in% input$data_years,
+        year %in% input$years,
         ip >= input$var[1],
         ip <= input$var[2]
       )
@@ -197,6 +244,15 @@ server <- function(input, output, session) {
       filter(school %in% input$report_schools)
   })
   
+  observeEvent(input$report_school_select_all, {
+    if (input$report_school_select_all) {
+      updateSelectizeInput(session, "report_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "report_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  
   # Render UI
   output$report_var_selector <- renderUI({
     req(filtered_report_df())
@@ -210,12 +266,13 @@ server <- function(input, output, session) {
       inputId = "selected_vars",
       label = "Choose variables to summarize:",
       choices = numeric_vars,
-      selected = numeric_vars[1]  
+      selected = numeric_vars[1]  # preselect first few
     )
   })
   
   # Reactive summary triggered by action button
   summary_data <- eventReactive(input$summary_stats, {
+    # Ensure inputs exist
     req(input$selected_vars)
     
     filtered_report_df() %>%
@@ -248,6 +305,7 @@ server <- function(input, output, session) {
   # Create dynamic table output
   output$analysis_report <- renderDT({
     if (report_mode() == "full") {
+      # Initial full data (excluding name)
       filtered_report_df() %>%
         filter(ip > 0) %>%
         datatable(
@@ -281,7 +339,24 @@ server <- function(input, output, session) {
     }
   })
   
-  # Reactive data
+  # Observe school select/deselect all toggle
+  observeEvent(input$adv_school_select_all, {
+    if (input$adv_school_select_all) {
+      updateSelectizeInput(session, "adv_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "adv_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$adv_year_select_all, {
+    if (input$adv_year_select_all) {
+      updateSelectizeInput(session, "adv_years", selected = seasons)
+    } else {
+      updateSelectizeInput(session, "adv_years", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  
   filtered_adv_df <- reactive({
     req(input$adv_schools, input$adv_years)
     
@@ -327,13 +402,21 @@ server <- function(input, output, session) {
       select(year, school, name, w, l, w_l_percent, ip, bf, fip, k_pct, bb_pct, k_bb, babip)
   })
   
+  
   # Reset advanced stats input controls
   observeEvent(input$reset_adv_stats, {
+    updateSelectizeInput(session, "adv_schools", selected = first(schools))
+    updateCheckboxInput(session, "adv_school_select_all", value = FALSE)
+    
+    updateSelectizeInput(session, "adv_years", selected = "2025")
+    updateCheckboxInput(session, "adv_year_select_all", value = FALSE)
+    
     updateNumericInput(session, "hr_weight", value = 13)
     updateNumericInput(session, "bb_weight", value = 3)
     updateNumericInput(session, "so_weight", value = 2)
     updateNumericInput(session, "fip_constant", value = 3.1)
     updateNumericInput(session, "fip_min_ip", value = 10)
+    
     updateNumericInput(session, "k_pct_min_bf", value = 10)
     updateNumericInput(session, "bb_pct_min_bf", value = 10)
     updateNumericInput(session, "k_bb_min_bb", value = 1)
@@ -436,65 +519,67 @@ server <- function(input, output, session) {
   
   ### Player Rating Tab ###
   
-  # Render both ui elements
   output$shared_rating_inputs <- renderUI({
     
     tagList(
-      pickerInput(
+      selectizeInput(
         inputId = "rating_schools",
         label = "Select School(s)",
         choices = schools,
-        selected = schools,
+        selected = first(schools),
         multiple = TRUE,
         options = list(
-          `actions-box` = TRUE,
-          `live-search` = TRUE,
-          `selected-text-format` = "count > 3"
+          placeholder = 'Search or scroll to choose school(s)',
+          maxOptions = 1000,
+          plugins = list('remove_button'),
+          closeAfterSelect = FALSE
         )
       ),
-      pickerInput(
+      checkboxInput("rating_select_all_schools", "Select/Deselect All Schools", value = FALSE),
+      selectizeInput(
         inputId = "rating_years",
         label = "Select Year(s)",
         choices = seasons,
-        selected = seasons,
+        selected = max(seasons),
         multiple = TRUE,
         options = list(
-          `actions-box` = TRUE,
-          `live-search` = TRUE,
-          `selected-text-format` = "count > 3"
+          placeholder = 'Search or scroll to choose year(s)',
+          maxOptions = 1000,
+          plugins = list('remove_button'),
+          closeAfterSelect = FALSE
         )
-      )
+      ),
+      checkboxInput("rating_select_all_years", "Select/Deselect All Years", value = FALSE)
     )
   })
   
-  # Reactive values for ratings data
+  # Observe school select/deselect all toggle
+  observeEvent(input$rating_select_all_schools, {
+    if (input$rating_select_all_schools) {
+      updateSelectizeInput(session, "rating_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "rating_schools", selected = first(schools))
+    }
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$rating_select_all_years, {
+    if (input$rating_select_all_years) {
+      updateSelectizeInput(session, "rating_years", selected = seasons)
+    } else {
+      updateSelectizeInput(session, "rating_years", selected = max(seasons))
+    }
+  }, ignoreInit = TRUE)
+  
   ratings_data <- reactiveVal()
   detailed_data <- reactiveVal()
-  
-  # Reactive filtered data
   
   filtered_ratings_df <- reactive({
     req(input$rating_schools, input$rating_years)
     
-    df %>%
+    df_full %>%
       filter(
         year %in% input$rating_years,
         school %in% input$rating_schools
-      ) %>%
-      mutate(
-        fip = case_when(
-          is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
-          ip < 10 ~ NA_real_,  # Replace 10 with your desired fip_min_ip
-          TRUE ~ round(((13 * hr) + (3 * bb) - (2 * so)) / ip + 3.1, 3)
-        ),
-        k_pct = case_when(
-          is.na(so) | is.na(bf) | bf < 10 ~ NA_real_,
-          TRUE ~ round(so / bf, 3)
-        ),
-        bb_pct = case_when(
-          is.na(bb) | is.na(bf) | bf < 10 ~ NA_real_,
-          TRUE ~ round(bb / bf, 3)
-        )
       )
   })
   
@@ -503,13 +588,13 @@ server <- function(input, output, session) {
     req(df)
     if (nrow(df) == 0) return(NULL)
     
-    initial_ratings <- generate_player_ratings(df, rating_stats, stat_weights)
+    initial_ratings <- generate_player_ratings(df, df_full, rating_stats, stat_weights, rescale_bounds)
     ratings_data(initial_ratings$summary)
     detailed_data(initial_ratings$detailed)
     
   })
   
-  # Ratings Table
+  # Ratings Table (Simplified — no column selection)
   output$ratings_table <- renderDT({
     req(input$rating_years, input$rating_schools)
     req(ratings_data())
@@ -548,11 +633,12 @@ server <- function(input, output, session) {
     updated_rating_stats <- rating_stats %>%
       mutate(prior_weight = updated_priors)
     
+    # IMPORTANT: use `filtered_ratings_df()` or the dataset that contains the derived vars
     rating_input_df <- filtered_ratings_df() %>%
-      filter(ip > 0) 
+      filter(ip > 0)  # Optional: filter based on IP cutoff
     
     # Run ratings generation
-    new_ratings <- generate_player_ratings(rating_input_df, updated_rating_stats, normalized_weights)
+    new_ratings <- generate_player_ratings(rating_input_df, df_full, updated_rating_stats, normalized_weights, rescale_bounds)
     
     ratings_data(new_ratings$summary)
     detailed_data(new_ratings$detailed)

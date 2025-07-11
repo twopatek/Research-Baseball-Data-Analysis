@@ -129,30 +129,35 @@ ui <- dashboardPage(
               solidHeader = TRUE,
               status = "info",
               width = 12,
-              pickerInput(
+              selectizeInput(
                 inputId = "data_schools",
                 label = "Select School(s)",
                 choices = schools,
-                selected = schools,
+                selected = first(schools),
                 multiple = TRUE,
                 options = list(
-                  `actions-box` = TRUE,
-                  `live-search` = TRUE,
-                  `selected-text-format` = "count > 3"
+                  placeholder = 'Search or scroll to choose school(s)',
+                  maxOptions = 1000,
+                  plugins = list('remove_button'),
+                  closeAfterSelect = FALSE
                 )
               ),
-              pickerInput(
-                inputId = "data_years",
+              checkboxInput("data_school_select_all", "Select/Deselect All Schools", value = FALSE),
+              selectizeInput(
+                inputId = "years",
                 label = "Select Year(s)",
                 choices = seasons,
-                selected = seasons,
+                selected = max(seasons),
                 multiple = TRUE,
                 options = list(
-                  `actions-box` = TRUE,
-                  `live-search` = TRUE,
-                  `selected-text-format` = "count > 3"
+                  placeholder = 'Search or scroll to choose year(s)',
+                  plugins = list('remove_button'),
+                  maxOptions = 1000
                 )
-              )
+              ),
+              checkboxInput("year_select_all", "Select/Deselect All Years", value = FALSE),
+              br(),
+              actionButton("reset_data_table", "Reset Table")
             )
           ),
           column(
@@ -162,13 +167,7 @@ ui <- dashboardPage(
               solidHeader = TRUE,
               status = "info",
               width = 12,
-              sliderInput(
-                "var",
-                label = "Choose the minimum or maximum innings pitched",
-                min = min_ip,
-                max = max_ip,
-                value = c(1, max_ip)
-              )
+              uiOutput("ip_slider")
             )
           )
         ),
@@ -196,18 +195,19 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "info",
                            width = 12,
-                           pickerInput(
+                           selectizeInput(
                              inputId = "report_schools",
                              label = "Select School(s)",
                              choices = schools,
-                             selected = schools,
+                             selected = first(schools),
                              multiple = TRUE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
+                           checkboxInput("report_school_select_all", "Select/Deselect All Schools", value = FALSE),
                            uiOutput("report_var_selector"),
                            actionButton("summary_stats", "Calculate Summary Stats"),
                            br(), br(), 
@@ -236,30 +236,36 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "info",
                            width = 12,
-                           pickerInput(
+                           
+                           # School + Year inputs (unchanged)
+                           selectizeInput(
                              inputId = "adv_schools",
                              label = "Select School(s)",
                              choices = schools,
-                             selected = schools,
+                             selected = first(schools),
                              multiple = TRUE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
-                           pickerInput(
+                           checkboxInput("adv_school_select_all", "Select/Deselect All Schools", value = FALSE),
+                           
+                           selectizeInput(
                              inputId = "adv_years",
                              label = "Select Year(s)",
                              choices = seasons,
-                             selected = seasons,
+                             selected = max(seasons),
                              multiple = TRUE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
+                           checkboxInput("adv_year_select_all", "Select/Deselect All Years", value = FALSE),
+                           
                            fluidRow(
                              column(
                                width = 6,
@@ -305,17 +311,11 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "info",
                            width = 12,
-                           pickerInput(
-                             inputId = "plot_schools",
-                             label = "Select School(s)",
+                           selectInput(
+                             "plot_schools",
+                             "Select School(s)",
                              choices = schools,
-                             selected = schools,
-                             multiple = TRUE,
-                             options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
-                             )
+                             selected = first(schools)
                            ),
                          uiOutput("plot_var_selector")
                          )),

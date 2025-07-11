@@ -1,7 +1,14 @@
 # Load and install packages
+
 pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, rsconnect, scales)
 
-# Set working directory
+# install.packages("http://cran.r-project.org/src/contrib/Archive/curl/curl_6.2.3.tar.gz", repos=NULL, type="source")
+# install.packages("rsconnect", type = "binary")
+# library(rsconnect)
+
+# Set directory for data files
+# data_path <- "/Users/matthewadams/Documents/R Projects/Baseball Data Analysis/Data/LSU"
+
 data_path <- here("Data")
 
 # List data files to compile
@@ -65,6 +72,74 @@ df <- all_data %>%
   relocate(year, .before = everything()) %>% 
   relocate(school, .after = year)
 
+df_full <- df %>% 
+  mutate(
+    fip = case_when(
+      is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
+      ip < 10 ~ NA_real_,  # Replace 10 with your desired fip_min_ip
+      TRUE ~ round(((13 * hr) + (3 * bb) - (2 * so)) / ip + 3.1, 3)
+    ),
+    k_pct = case_when(
+      is.na(so) | is.na(bf) | bf < 10 ~ NA_real_,
+      TRUE ~ round(so / bf, 3)
+    ),
+    bb_pct = case_when(
+      is.na(bb) | is.na(bf) | bf < 10 ~ NA_real_,
+      TRUE ~ round(bb / bf, 3)
+    )
+  )
+
+league_avgs <- df_full %>%
+  filter(ip > 0) %>%
+  group_by(year) %>%
+  summarize(across(
+    all_of(rating_stats$stat),
+    ~ round(mean(.x, na.rm = TRUE), 3), 
+    .names = "avg_{.col}"
+  ), .groups = "drop")
+
+# # Full dataset with shrinkage applied
+# full_shrunk <- df_full %>%
+#   filter(ip > 0) %>%
+#   left_join(league_avgs, by = "year")
+
+# Start with base join
+full_shrunk_base <- df_full %>%
+  filter(ip > 0) %>%
+  left_join(league_avgs, by = "year")
+
+# Apply shrinkage
+full_shrunk <- rating_stats %>%
+  mutate(
+    avg_col = paste0("avg_", stat),
+    shrunk_col = paste0("shrunk_", stat)
+  ) %>%
+  pmap(function(stat, higher_is_better, prior_weight, avg_col, shrunk_col) {
+    full_shrunk_base %>%
+      mutate(!!shrunk_col := case_when(
+        ip > 0 &
+          is.finite(.data[[stat]]) &
+          is.finite(.data[[avg_col]]) ~ round(
+            (ip * .data[[stat]] + prior_weight * .data[[avg_col]]) / (ip + prior_weight), 3
+          ),
+        TRUE ~ NA_real_
+      ))
+  }) %>%
+  reduce(left_join, by = colnames(full_shrunk_base))
+
+
+
+# Get min/max for each shrunk stat per year
+rescale_bounds <- full_shrunk %>%
+  group_by(year) %>%
+  summarize(across(
+    starts_with("shrunk_"),
+    list(min = ~min(.x, na.rm = TRUE), max = ~max(.x, na.rm = TRUE)),
+    .names = "{.col}_{.fn}"
+  ), .groups = "drop")
+
+
+
 # Identify user slider input ranges
 min_ip <- floor(min(df$ip, na.rm = TRUE))
 max_ip <- ceiling(max(df$ip, na.rm = TRUE))
@@ -103,22 +178,69 @@ stat_weights <- c(
 rating_stats <- rating_stats %>% arrange(stat)
 stat_weights <- stat_weights[order(names(stat_weights))]
 
-generate_player_ratings <- function(df, rating_stats, stat_weights) {
+rescale_with_league_bounds <- function(df_input, rating_stats, rescale_bounds) {
+  
+  rating_meta <- rating_stats %>%
+    mutate(
+      shrunk_col = paste0("shrunk_", stat),
+      rating_col = paste0(stat, "_rating"),
+      min_col = paste0("shrunk_", stat, "_min"),
+      max_col = paste0("shrunk_", stat, "_max"),
+      invert = !higher_is_better
+    )
+  
+  for (i in seq_len(nrow(rating_meta))) {
+    stat_info <- rating_meta[i, ]
+    
+    shrunk_col <- stat_info$shrunk_col
+    rating_col <- stat_info$rating_col
+    min_col <- stat_info$min_col
+    max_col <- stat_info$max_col
+    invert <- stat_info$invert
+    
+    df_input <- df_input %>%
+      left_join(
+        rescale_bounds %>%
+          select(year, !!min_col, !!max_col),
+        by = "year"
+      ) %>%
+      mutate(
+        !!rating_col := case_when(
+          is.na(.data[[shrunk_col]]) ~ NA_real_,
+          .data[[max_col]] == .data[[min_col]] ~ NA_real_,
+          TRUE ~ round(
+            if (invert) {
+              (1 - ((.data[[shrunk_col]] - .data[[min_col]]) /
+                      (.data[[max_col]] - .data[[min_col]]))) * 100
+            } else {
+              ((.data[[shrunk_col]] - .data[[min_col]]) /
+                 (.data[[max_col]] - .data[[min_col]])) * 100
+            },
+            0
+          )
+        )
+      )
+  }
+  
+  df_input
+}
+
+generate_player_ratings <- function(df_input, df_full, rating_stats, stat_weights, rescale_bounds) {
   
   req(df)
   validate(need(nrow(df) > 0, "No data available for selected filters."))
   
-  # Compute league averages per year
-  league_avgs <- df %>%
-    filter(ip > 0) %>%
-    group_by(year) %>%
-    summarize(across(
-      all_of(rating_stats$stat),
-      ~ round(mean(.x, na.rm = TRUE), 3), 
-      .names = "avg_{.col}"
-    ), .groups = "drop")
+  # # Compute league averages per year
+  # league_avgs <- df_full %>%
+  #   filter(ip > 0) %>%
+  #   group_by(year) %>%
+  #   summarize(across(
+  #     all_of(rating_stats$stat),
+  #     ~ round(mean(.x, na.rm = TRUE), 3), 
+  #     .names = "avg_{.col}"
+  #   ), .groups = "drop")
   
-  df_joined <- df %>% left_join(league_avgs, by = "year")
+  df_joined <- df_input %>% left_join(league_avgs, by = "year")
   
   # Create named vector for priors
   prior_weights <- rating_stats$prior_weight
@@ -159,23 +281,8 @@ generate_player_ratings <- function(df, rating_stats, stat_weights) {
     )
   
   # Rescale ratings
-  rescale_ratings_by_year <- function(df_group) {
-    rating_cols <- pmap_dfc(
-      rating_stats,
-      function(stat, higher_is_better, prior_weight, shrunk_col, rating_col, invert) {
-        values <- df_group[[shrunk_col]]
-        values <- if (invert) -values else values
-        tibble(!!rating_col := round(rescale(values, to = c(0, 100), na.rm = TRUE), 0))
-      }
-    )
-    bind_cols(df_group, rating_cols)
-  }
+  df_ratings <- rescale_with_league_bounds(df_joined, rating_stats, rescale_bounds)
   
-  df_ratings <- df_joined %>%
-    group_by(year) %>%
-    group_split() %>%
-    map_dfr(rescale_ratings_by_year) %>%
-    ungroup()
   
   # Composite score
   valid_weights <- stat_weights[names(stat_weights) %in% colnames(df_ratings)]
@@ -210,6 +317,7 @@ generate_player_ratings <- function(df, rating_stats, stat_weights) {
   
   return(list(summary = summary, detailed = detailed))
 }
+
 
 
 
