@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, scales, tictoc)
 ```
 
-```{r Baseball Reference, warning=FALSE}
+```{r read data, warning=FALSE}
 # Path to all files
 data_path <- here("Data")
 
@@ -24,26 +24,44 @@ process_file <- function(file) {
     clean_names()
 }
 
-# tic()
-# # Summary of each file's column types
-# type_summary <- map_dfr(data_list, function(file) {
-#   df <- process_file(file)
-#   types <- map_chr(df, ~ class(.x)[1])  # get class of each column
-# 
-#   tibble(
-#     file = file,
-#     n_vars = ncol(df)
-#   ) %>%
-#     bind_cols(as_tibble_row(types))
-# })
-# toc()
+tic()
+type_summary <- map_dfr(data_list, function(file) {
+  # Read only headers
+  df <- read_csv(file, show_col_types = FALSE, n_max = 0)
+  types <- map_chr(df, ~ class(.x)[1])
+  
+  tibble(
+    file = file,
+    n_vars = ncol(df)
+  ) %>% 
+    bind_cols(as_tibble_row(types))
+})
+toc()
 
+tic()
+# Summary structure
+type_summary <- map_dfr(data_list, function(file) {
+  df <- process_file(file)
+  types <- map_chr(df, ~ class(.x)[1])  # get class of each column
+
+  tibble(
+    file = file,
+    n_vars = ncol(df)
+  ) %>%
+    bind_cols(as_tibble_row(types))
+})
+toc()
+```
+
+
+```{r  }
 # Create standard file format 
 template_df <- read_csv(here("Data", "LSU", "sportsref_download_LSU_2025.csv")) %>% clean_names()
 col_types_template <- map_chr(template_df, ~ class(.x)[1])
 
 read_and_clean <- function(file, col_types) {
-  df <- read_csv(file, show_col_types = FALSE) %>% clean_names()
+  df <- read_csv(file, show_col_types = FALSE) %>% 
+    clean_names()
   
   for (col in names(col_types)) {  # Loop over every column name in the type template
   if (col %in% names(df)) {      # Only run if that column exists in the current file’s dataframe
@@ -62,9 +80,7 @@ read_and_clean <- function(file, col_types) {
   
   # Extract school and year from filename
   file_base <- basename(file)
-  
   school <- str_extract(file_base, "(?<=sportsref_download_).*?(?=_[0-9]{4})")
-
   year   <- str_extract(file_base, "\\d{4}")
   
   df <- df %>%
@@ -74,11 +90,15 @@ read_and_clean <- function(file, col_types) {
     )
   
   return(df)
-
 }
 
-all_data <- map_dfr(data_list, ~ read_and_clean(.x, col_types_template))
+tic()
+all_data <- suppressWarnings(
+  map_dfr(data_list, ~ read_and_clean(.x, col_types_template))
+)
+toc()
 
+# Final Data
 df <- all_data %>% 
   mutate(name = str_replace_all(name, "[^A-Za-z ]", "")) %>% 
   filter(!is.na(rk)) %>% 
@@ -86,9 +106,6 @@ df <- all_data %>%
   select(-notes) %>% 
   relocate(year, .before = everything()) %>% 
   relocate(school, .after = year)
-
-unique(df$school)
-
 ```
 Advanced statistics
 

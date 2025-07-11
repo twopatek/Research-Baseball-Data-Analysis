@@ -7,12 +7,6 @@ data_path <- here("Data")
 # List data files to compile
 data_list <- list.files(path = data_path, pattern = "sportsref_download", recursive = TRUE, full.names = TRUE)
 
-# Function to read and clean a file
-process_file <- function(file) {
-  read_csv(file, show_col_types = FALSE) %>% 
-    clean_names()
-}
-
 # Create standard file format 
 template_df <- read_csv(here("Data", "LSU", "sportsref_download_LSU_2025.csv")) %>% 
   clean_names()
@@ -40,7 +34,6 @@ read_and_clean <- function(file, col_types) {
   
   # Extract school and year from filename
   file_base <- basename(file)
-  
   school <- str_extract(file_base, "(?<=sportsref_download_).*?(?=_[0-9]{4})")
   year   <- str_extract(file_base, "\\d{4}")
   

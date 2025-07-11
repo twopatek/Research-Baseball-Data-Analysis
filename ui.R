@@ -309,8 +309,8 @@ ui <- dashboardPage(
                              inputId = "plot_schools",
                              label = "Select School(s)",
                              choices = schools,
-                             selected = schools,
-                             multiple = TRUE,
+                             selected = first(schools),
+                             multiple = FALSE,
                              options = list(
                                `actions-box` = TRUE,
                                `live-search` = TRUE,
