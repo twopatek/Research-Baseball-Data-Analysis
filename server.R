@@ -19,7 +19,7 @@ server <- function(input, output, session) {
   })
   
   
-  # Top 5 Strikeouts by Team-Year
+  # Top Strikeouts by Team-Year
   output$top_so_teams <- renderDT({
     df %>%
       mutate(year_team = paste(year, school)) %>%
@@ -39,15 +39,15 @@ server <- function(input, output, session) {
       )
   })
   
-  # Top 5 Strikeouts by Player-Year
+  # Top Strikeouts by Player-Year
   output$top_so_players <- renderDT({
     
     req(input$ip_range)
     
     df %>%
       filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(school_year_player = paste(year, school, name)) %>%
-      select(school_year_player, ip, so) %>% 
+      mutate(year_school_player = paste(year, school, name)) %>%
+      select(year_school_player, ip, so) %>% 
       arrange(desc(so)) %>%
       datatable(
         options = list(
@@ -62,7 +62,7 @@ server <- function(input, output, session) {
       )
   })
   
-  # Top 5 ERA by Team-Year
+  # Top ERA by Team-Year
   output$top_era_teams <- renderDT({
     
     req(input$ip_range)
@@ -85,15 +85,15 @@ server <- function(input, output, session) {
       )
   })
   
-  # Top 5 ERA by Player-Year
+  # Top ERA by Player-Year
   output$top_era_players <- renderDT({
     
     req(input$ip_range)
     
     df %>%
       filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(school_year_player = paste(year, school, name)) %>%
-      select(school_year_player, ip, era) %>% 
+      mutate(year_school_player = paste(year, school, name)) %>%
+      select(year_school_player, ip, era) %>% 
       arrange(era) %>%
       datatable(
         options = list(
@@ -108,7 +108,7 @@ server <- function(input, output, session) {
       )
   })
   
-  # Top 5 WHIP by Team-Year
+  # Top WHIP by Team-Year
   output$top_whip_teams <- renderDT({
     
     req(input$ip_range)
@@ -131,15 +131,15 @@ server <- function(input, output, session) {
       )
   })
   
-  # Top 5 WHIP by Player-Year
+  # Top WHIP by Player-Year
   output$top_whip_players <- renderDT({
     
     req(input$ip_range)
     
     df %>%
       filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>% 
-      mutate(school_year_player = paste(year, school, name)) %>%
-      select(school_year_player, ip, whip) %>% 
+      mutate(year_school_player = paste(year, school, name)) %>%
+      select(year_school_player, ip, whip) %>% 
       arrange(whip) %>%
       datatable(
         options = list(
@@ -471,91 +471,68 @@ server <- function(input, output, session) {
   ratings_data <- reactiveVal()
   detailed_data <- reactiveVal()
   
-  # Reactive filtered data
+  ratings_data(all_ratings$summary)
+  detailed_data(all_ratings$detailed)
   
-  filtered_ratings_df <- reactive({
-    req(input$rating_schools, input$rating_years)
-    
-    df %>%
-      filter(
-        year %in% input$rating_years,
-        school %in% input$rating_schools
-      ) %>%
-      mutate(
-        fip = case_when(
-          is.na(hr) | is.na(bb) | is.na(so) | is.na(ip) ~ NA_real_,
-          ip < 10 ~ NA_real_,  # Replace 10 with your desired fip_min_ip
-          TRUE ~ round(((13 * hr) + (3 * bb) - (2 * so)) / ip + 3.1, 3)
-        ),
-        k_pct = case_when(
-          is.na(so) | is.na(bf) | bf < 10 ~ NA_real_,
-          TRUE ~ round(so / bf, 3)
-        ),
-        bb_pct = case_when(
-          is.na(bb) | is.na(bf) | bf < 10 ~ NA_real_,
-          TRUE ~ round(bb / bf, 3)
-        )
-      )
-  })
   
-  observe({
-    df <- filtered_ratings_df()
-    req(df)
-    if (nrow(df) == 0) return(NULL)
-    
-    initial_ratings <- generate_player_ratings(df, rating_stats, stat_weights)
-    ratings_data(initial_ratings$summary)
-    detailed_data(initial_ratings$detailed)
-    
-  })
-  
-  # Ratings Table
-  output$ratings_table <- renderDT({
-    req(input$rating_years, input$rating_schools)
-    req(ratings_data())
+  # Reactive ratings
+  filtered_ratings <- reactive({
+    req(ratings_data(), input$rating_schools, input$rating_years)
     
     ratings_data() %>%
       filter(year %in% input$rating_years, school %in% input$rating_schools)
+  })
+  
+  filtered_detailed <- reactive({
+    req(detailed_data(), input$rating_schools, input$rating_years)
+    
+    detailed_data() %>%
+      filter(year %in% input$rating_years, school %in% input$rating_schools)
+  })
+  
+
+  # Ratings Table
+  output$ratings_table <- renderDT({
+    filtered_ratings()
   },
   options = list(pageLength = -1, scrollY = "500px", scrollX = TRUE, paging = FALSE)
   )
   
   # Methodology Table
   output$methodology_table <- renderDT({
-    req(input$rating_years, input$rating_schools)
-    req(detailed_data())
-    
-    detailed_data() %>%
-      filter(year %in% input$rating_years, school %in% input$rating_schools)
+    filtered_detailed()
   },
   options = list(pageLength = -1, scrollY = "500px", scrollX = TRUE, paging = FALSE)
   )
   
   # Recalculate logic placeholder
   observeEvent(input$update_ratings, {
-    raw_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
-    names(raw_weights) <- paste0(rating_stats$stat, "_rating")
-    
-    weight_sum <- sum(raw_weights, na.rm = TRUE)
-    if (weight_sum == 0) {
-      normalized_weights <- rep(1 / length(raw_weights), length(raw_weights))  # fallback: equal weights
-    } else {
-      normalized_weights <- raw_weights / weight_sum
-    }
-    
-    updated_priors <- sapply(rating_stats$stat, function(stat) input[[paste0("prior_", stat)]])
-    
-    updated_rating_stats <- rating_stats %>%
-      mutate(prior_weight = updated_priors)
-    
-    rating_input_df <- filtered_ratings_df() %>%
-      filter(ip > 0) 
-    
-    # Run ratings generation
-    new_ratings <- generate_player_ratings(rating_input_df, updated_rating_stats, normalized_weights)
-    
-    ratings_data(new_ratings$summary)
-    detailed_data(new_ratings$detailed)
+    withProgress(message = "Calculating player ratings. Please wait...", value = 0.5, {
+      
+      raw_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
+      names(raw_weights) <- paste0(rating_stats$stat, "_rating")
+      
+      weight_sum <- sum(raw_weights, na.rm = TRUE)
+      if (weight_sum == 0) {
+        normalized_weights <- rep(1 / length(raw_weights), length(raw_weights))  # fallback: equal weights
+      } else {
+        normalized_weights <- raw_weights / weight_sum
+      }
+      
+      updated_priors <- sapply(rating_stats$stat, function(stat) input[[paste0("prior_", stat)]])
+      
+      updated_rating_stats <- rating_stats %>%
+        mutate(prior_weight = updated_priors)
+      
+      rating_input_df <- player_ratings_df %>%
+        filter(ip > 0)
+      
+      # Run ratings generation
+      new_ratings <- generate_player_ratings(rating_input_df, updated_rating_stats, normalized_weights)
+      
+      ratings_data(new_ratings$summary)
+      detailed_data(new_ratings$detailed)
+    })
   })
   
   # Reset methodology stats
@@ -569,6 +546,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # Render warning output for weights
   output$weight_sum_warning <- renderText({
     raw_weights <- sapply(rating_stats$stat, function(stat) input[[paste0("weight_", stat)]])
     total <- round(sum(raw_weights, na.rm = TRUE), 3)

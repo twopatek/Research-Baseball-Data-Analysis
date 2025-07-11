@@ -54,7 +54,7 @@ ui <- dashboardPage(
         ),
         fluidRow(
           box(
-            title = "Top Strikeouts (Player-Year)",
+            title = "Top Strikeouts (Team-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
@@ -64,7 +64,7 @@ ui <- dashboardPage(
             )
           ),
           box(
-            title = "Top 5 Strikeouts (Player-Year)",
+            title = "Top Strikeouts (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
@@ -76,7 +76,7 @@ ui <- dashboardPage(
         ),
         fluidRow(
           box(
-            title = "Top 5 ERA (Team-Year)",
+            title = "Top ERA (Team-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
@@ -86,7 +86,7 @@ ui <- dashboardPage(
             )
           ),
           box(
-            title = "Top 5 ERA (Player-Year)",
+            title = "Top ERA (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
@@ -98,7 +98,7 @@ ui <- dashboardPage(
         ),
         fluidRow(
           box(
-            title = "Top 5 WHIP (Team-Year)",
+            title = "Top WHIP (Team-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,
@@ -108,7 +108,7 @@ ui <- dashboardPage(
               )
           ),
           box(
-            title = "Top 5 WHIP (Player-Year)",
+            title = "Top WHIP (Player-Year)",
             status = "primary",
             solidHeader = TRUE,
             width = 6,

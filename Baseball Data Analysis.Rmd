@@ -18,12 +18,7 @@ data_path <- here("Data")
 # List data files to compile
 data_list <- list.files(path = data_path, pattern = "sportsref_download", recursive = TRUE, full.names = TRUE)
 
-# Function to read and clean a file
-process_file <- function(file) {
-  read_csv(file, show_col_types = FALSE) %>% 
-    clean_names()
-}
-
+# Create data structure summary  of all files
 tic()
 type_summary <- map_dfr(data_list, function(file) {
   # Read only headers
@@ -37,20 +32,6 @@ type_summary <- map_dfr(data_list, function(file) {
     bind_cols(as_tibble_row(types))
 })
 toc()
-
-tic()
-# Summary structure
-type_summary <- map_dfr(data_list, function(file) {
-  df <- process_file(file)
-  types <- map_chr(df, ~ class(.x)[1])  # get class of each column
-
-  tibble(
-    file = file,
-    n_vars = ncol(df)
-  ) %>%
-    bind_cols(as_tibble_row(types))
-})
-toc()
 ```
 
 
@@ -59,6 +40,7 @@ toc()
 template_df <- read_csv(here("Data", "LSU", "sportsref_download_LSU_2025.csv")) %>% clean_names()
 col_types_template <- map_chr(template_df, ~ class(.x)[1])
 
+# Function to clean files
 read_and_clean <- function(file, col_types) {
   df <- read_csv(file, show_col_types = FALSE) %>% 
     clean_names()
