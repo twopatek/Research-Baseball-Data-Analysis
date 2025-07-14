@@ -156,6 +156,23 @@ server <- function(input, output, session) {
   
   ### Data Menu Item ###
   
+  # Render dynamic school selector
+  observe({
+    if (input$data_school_select_all) {
+      updateSelectInput(session, "data_schools", selected = schools)
+    } else {
+      updateSelectInput(session, "data_schools", selected = first(schools))
+    }
+  })
+  
+  observe({
+    if (input$data_year_select_all) {
+      updateSelectInput(session, "data_years", selected = seasons)
+    } else {
+      updateSelectInput(session, "data_years", selected = max(seasons))
+    }
+  })
+  
   # Reactive raw data
   filtered_raw_df <- reactive({
     req(input$data_schools, input$data_years, input$var)
@@ -187,6 +204,14 @@ server <- function(input, output, session) {
   ### Analysis Menu Item ###
   
   ## Report Tab Panel ##
+  
+  observeEvent(input$report_school_select_all, {
+    if (input$report_school_select_all) {
+      updateSelectizeInput(session, "report_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "report_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
   
   # Reactive report data
   filtered_report_df <- reactive({
@@ -272,6 +297,23 @@ server <- function(input, output, session) {
   })
   
   ### Advanced Statistics Panel Server Logic ###
+  
+  # Observe school select/deselect all toggle
+  observeEvent(input$adv_school_select_all, {
+    if (input$adv_school_select_all) {
+      updateSelectizeInput(session, "adv_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "adv_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$adv_year_select_all, {
+    if (input$adv_year_select_all) {
+      updateSelectizeInput(session, "adv_years", selected = seasons)
+    } else {
+      updateSelectizeInput(session, "adv_years", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
   
   adv_stats_initialized <- reactiveVal(FALSE)
   
@@ -436,34 +478,53 @@ server <- function(input, output, session) {
   
   ### Player Rating Tab ###
   
+  # Observe school select/deselect all toggle
+  observeEvent(input$rating_school_select_all, {
+    if (input$rating_school_select_all) {
+      updateSelectizeInput(session, "rating_schools", selected = schools)
+    } else {
+      updateSelectizeInput(session, "rating_schools", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$rating_year_select_all, {
+    if (input$rating_year_select_all) {
+      updateSelectizeInput(session, "rating_years", selected = seasons)
+    } else {
+      updateSelectizeInput(session, "rating_years", selected = character(0))
+    }
+  }, ignoreInit = TRUE)
+  
   # Render both ui elements
   output$shared_rating_inputs <- renderUI({
     
     tagList(
-      pickerInput(
+      selectizeInput(
         inputId = "rating_schools",
         label = "Select School(s)",
         choices = schools,
         selected = schools,
         multiple = TRUE,
         options = list(
-          `actions-box` = TRUE,
-          `live-search` = TRUE,
-          `selected-text-format` = "count > 3"
+          placeholder = "Search or scroll to choose school(s)",
+          plugins = list("remove_button"),
+          maxOptions = 1000
         )
       ),
-      pickerInput(
+      checkboxInput("rating_school_select_all", "Select/Deselect All Schools", value = FALSE),
+      selectizeInput(
         inputId = "rating_years",
         label = "Select Year(s)",
         choices = seasons,
         selected = seasons,
         multiple = TRUE,
         options = list(
-          `actions-box` = TRUE,
-          `live-search` = TRUE,
-          `selected-text-format` = "count > 3"
+          placeholder = "Search or scroll to choose school(s)",
+          plugins = list("remove_button"),
+          maxOptions = 1000
         )
-      )
+      ),
+      checkboxInput("rating_year_select_all", "Select/Deselect All Years", value = FALSE)
     )
   })
   
@@ -490,7 +551,7 @@ server <- function(input, output, session) {
       filter(year %in% input$rating_years, school %in% input$rating_schools)
   })
   
-  
+
   # Ratings Table
   output$ratings_table <- renderDT({
     filtered_ratings()

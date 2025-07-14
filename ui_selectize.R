@@ -3,11 +3,11 @@ ui <- dashboardPage(
   dashboardHeader(title = "NCAA Pitching Analysis Dashboard"),
   dashboardSidebar(
     sidebarMenu(id = "tabs",
-                menuItem("Info", tabName = "info_tab"),
-                menuItem("Leaderboard", tabName = "leaderboard_tab"),
-                menuItem("Data", tabName = "data_tab"),
-                menuItem("Analysis", tabName = "analysis_tab"),
-                menuItem("Player Ratings", tabName = "ratings_tab")
+      menuItem("Info", tabName = "info_tab"),
+      menuItem("Leaderboard", tabName = "leaderboard_tab"),
+      menuItem("Data", tabName = "data_tab"),
+      menuItem("Analysis", tabName = "analysis_tab"),
+      menuItem("Player Ratings", tabName = "ratings_tab")
     )
   ),
   dashboardBody(
@@ -105,7 +105,7 @@ ui <- dashboardPage(
             div(
               style = "height: 250px; overflow-y: scroll;",
               DTOutput("top_whip_teams")
-            )
+              )
           ),
           box(
             title = "Top WHIP (Player-Year)",
@@ -129,30 +129,32 @@ ui <- dashboardPage(
               solidHeader = TRUE,
               status = "info",
               width = 12,
-              pickerInput(
+              selectizeInput(
                 inputId = "data_schools",
                 label = "Select School(s)",
                 choices = schools,
                 selected = schools,
                 multiple = TRUE,
                 options = list(
-                  `actions-box` = TRUE,
-                  `live-search` = TRUE,
-                  `selected-text-format` = "count > 3"
+                  placeholder = "Search or scroll to choose school(s)",
+                  plugins = list("remove_button"),
+                  maxOptions = 1000
                 )
               ),
-              pickerInput(
+              checkboxInput("data_school_select_all", "Select/Deselect All Schools", value = FALSE),
+              selectizeInput(
                 inputId = "data_years",
                 label = "Select Year(s)",
                 choices = seasons,
                 selected = seasons,
                 multiple = TRUE,
                 options = list(
-                  `actions-box` = TRUE,
-                  `live-search` = TRUE,
-                  `selected-text-format` = "count > 3"
+                  placeholder = "Search or scroll to choose school(s)",
+                  plugins = list("remove_button"),
+                  maxOptions = 1000
                 )
-              )
+              ),
+              checkboxInput("data_year_select_all", "Select/Deselect All Years", value = FALSE)
             )
           ),
           column(
@@ -196,18 +198,19 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "info",
                            width = 12,
-                           pickerInput(
+                           selectizeInput(
                              inputId = "report_schools",
                              label = "Select School(s)",
                              choices = schools,
                              selected = schools,
                              multiple = TRUE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
+                           checkboxInput("report_school_select_all", "Select/Deselect All Schools", value = FALSE),
                            uiOutput("report_var_selector"),
                            actionButton("summary_stats", "Calculate Summary Stats"),
                            br(), br(), 
@@ -236,30 +239,32 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "info",
                            width = 12,
-                           pickerInput(
+                           selectizeInput(
                              inputId = "adv_schools",
                              label = "Select School(s)",
                              choices = schools,
                              selected = schools,
                              multiple = TRUE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
-                           pickerInput(
+                           checkboxInput("adv_school_select_all", "Select/Deselect All Schools", value = FALSE),
+                           selectizeInput(
                              inputId = "adv_years",
                              label = "Select Year(s)",
                              choices = seasons,
                              selected = seasons,
                              multiple = TRUE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
+                           checkboxInput("adv_year_select_all", "Select/Deselect All Years", value = FALSE),
                            fluidRow(
                              column(
                                width = 6,
@@ -278,7 +283,7 @@ ui <- dashboardPage(
                                numericInput("babip_min_ip", "Min IP (BABIP)", value = 10)
                              )
                            ),
-                           
+                          
                            br(),
                            actionButton("reset_adv_stats", "Reset")
                          )
@@ -305,19 +310,19 @@ ui <- dashboardPage(
                            solidHeader = TRUE,
                            status = "info",
                            width = 12,
-                           pickerInput(
+                           selectizeInput(
                              inputId = "plot_schools",
                              label = "Select School(s)",
                              choices = schools,
                              selected = first(schools),
                              multiple = FALSE,
                              options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
+                               placeholder = "Search or scroll to choose school(s)",
+                               plugins = list("remove_button"),
+                               maxOptions = 1000
                              )
                            ),
-                           uiOutput("plot_var_selector")
+                         uiOutput("plot_var_selector")
                          )),
                        column(
                          width = 8,
@@ -415,8 +420,8 @@ ui <- dashboardPage(
                                       status = "primary",
                                       solidHeader = TRUE,
                                       DTOutput("ratings_table"))
-                                  )
-                         ),
+                                    )
+                                  ),
                          tabPanel("Methodology",
                                   fluidRow(
                                     box(
@@ -425,8 +430,8 @@ ui <- dashboardPage(
                                       status = "primary",
                                       solidHeader = TRUE,
                                       DTOutput("methodology_table"))
-                                  )
-                         ),
+                                    )
+                                  ),
                          tabPanel("Info",
                                   fluidRow(
                                     box(

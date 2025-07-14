@@ -490,7 +490,7 @@ server <- function(input, output, session) {
       filter(year %in% input$rating_years, school %in% input$rating_schools)
   })
   
-  
+
   # Ratings Table
   output$ratings_table <- renderDT({
     filtered_ratings()

@@ -88,6 +88,8 @@ df <- all_data %>%
   select(-notes) %>% 
   relocate(year, .before = everything()) %>% 
   relocate(school, .after = year)
+
+unique(df$school)
 ```
 Advanced statistics
 
