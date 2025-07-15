@@ -25,6 +25,7 @@ For collaboration inquiries or licensing requests, contact: mdadams626@outlook.c
 ###  Leaderboard Tab
 Quickly explore top pitching performers with built-in filters:
 - **Innings Pitched Slider**: Adjust the minimum and maximum IP threshold
+- **Top 5 SO (Team-Year & Player-Year)**
 - **Top 5 ERA (Team-Year & Player-Year)**
 - **Top 5 WHIP (Team-Year & Player-Year)**  
 Displayed using interactive DataTables for easy comparison.
