@@ -1,7 +1,7 @@
 # Run the application
-source("CopyOfglobal.R")
-source("CopyOfui.R")
-source("CopyOfserver.R")
+source("global.R")
+source("ui.R")
+source("server.R")
 shinyApp(ui, server)
 
 # remotes::install_version("bslib", version = "0.4.2")

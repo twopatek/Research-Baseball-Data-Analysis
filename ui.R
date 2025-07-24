@@ -22,21 +22,27 @@ ui <- dashboardPage(
             solidHeader = TRUE,
             collapsible = TRUE,
             HTML("
-        <p>This NCAA Pitching Dashboard is part of an ongoing effort to build a custom database of college baseball pitching statistics.</p>
-        <p><strong>Project Goals:</strong></p>
-        <ul>
-          <li>Consolidate and explore NCAA pitching data across multiple years.</li>
-          <li>Provide a dashboard for quick filtering, analysis, and visualization of team and player performance.</li>
-        </ul>
-        <p><strong>Data Methodology:</strong></p>
-        <ul>
-          <li>All data is manually downloaded from <a href='https://www.sports-reference.com/cbb/' target='_blank'>Baseball Reference</a> by team and season.</li>
-          <li>Files are standardized and cleaned locally before being compiled into the dashboard.</li>
-          <li>This process is ongoing, and additional teams will be added over time.</li>
-        </ul>
-        <p>Built in <code>R</code> using <code>Shiny</code>, <code>tidyverse</code>, and <code>plotly</code>.</p>
-        <p><strong>View full project and documentation on GitHub:</strong> <a href='https://github.com/twopatek/Baseball-Data-Analysis/blob/main/README.md' target='_blank'>github.com/twopatek/Baseball-Data-Analysis</a></p>
-      ")
+              <p>This NCAA Pitching Dashboard is a personal, non-commercial project created to analyze and visualize trends in college baseball pitching statistics.</p>
+
+  <p><strong>Project Goals:</strong></p>
+  <ul>
+    <li>Explore historical NCAA pitching data across multiple seasons.</li>
+    <li>Provide an interactive dashboard for filtering, analysis, and visualization of player and team performance.</li>
+  </ul>
+
+  <p><strong>Data Methodology:</strong></p>
+  <ul>
+    <li>Data was manually compiled from publicly accessible team season pages available on a leading baseball statistics website.</li>
+    <li>Files were standardized and cleaned locally before being included in the dashboard.</li>
+    <li>This is an ongoing process, with additional teams being added over time.</li>
+  </ul>
+
+  <p><em>This dashboard is for educational and demonstration purposes only. It is not affiliated with or endorsed by any official data provider or governing body.</em></p>
+
+  <p>Built using <code>R</code>, <code>Shiny</code>, <code>tidyverse</code>, and <code>plotly</code>.</p>
+"
+                 )
+            
           )
         )
       ),

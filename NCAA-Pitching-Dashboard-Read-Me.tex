@@ -1,0 +1,211 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={NCAA Pitching Dashboard Read Me},
+  pdfauthor={Matthew Adams},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{NCAA Pitching Dashboard Read Me}
+\author{Matthew Adams}
+\date{2025-07-17}
+
+\begin{document}
+\maketitle
+
+\section{NCAA Pitching Analysis
+Dashboard}\label{ncaa-pitching-analysis-dashboard}
+
+\subsection{Overview}\label{overview}
+
+This project consists of a comprehensive \textbf{Shiny dashboard} built
+to analyze, explore, and visualize NCAA Division I baseball
+\textbf{pitching data}. It is part of a broader effort to construct and
+maintain a \textbf{custom NCAA pitching dataset} that does not currently
+exist in a centralized or accessible format.
+
+The app is designed for baseball analysts, researchers, and fans
+interested in evaluating historical and team-level pitching performance
+across multiple dimensions.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Live Dashboard Prototype}\label{live-dashboard-prototype}
+
+➡️
+\textbf{\href{https://matthew-apps.shinyapps.io/baseball_data_analysis/}{Click
+here to explore the NCAA Pitching Analysis Dashboard}}\\
+\emph{The app is hosted via
+\href{https://www.shinyapps.io}{shinyapps.io}.}
+
+\subsection{License}\label{license}
+
+This project is proprietary and all rights are reserved by Matthew
+Adams.
+
+Unauthorized copying, modification, distribution, or commercial use is
+strictly prohibited.\\
+For collaboration inquiries or licensing requests, contact:
+\href{mailto:mdadams626@outlook.com}{\nolinkurl{mdadams626@outlook.com}}.
+
+\subsection{Dashboard Features}\label{dashboard-features}
+
+\subsubsection{Leaderboard Tab}\label{leaderboard-tab}
+
+Quickly explore top pitching performers with built-in filters: -
+\textbf{Innings Pitched Slider}: Adjust the minimum and maximum IP
+threshold - \textbf{Top 5 SO (Team-Year \& Player-Year)} - \textbf{Top 5
+ERA (Team-Year \& Player-Year)} - \textbf{Top 5 WHIP (Team-Year \&
+Player-Year)}\\
+Displayed using interactive DataTables for easy comparison.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsubsection{Data Tab}\label{data-tab}
+
+Dive into the raw player-level pitching data: - \textbf{Filter by School
+\& Year} (with select/deselect all toggle) - \textbf{Dynamic IP Slider}
+for custom filtering - \textbf{Reset Button} to return to default view -
+\textbf{Interactive Table} shows all available player records matching
+filter criteria
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsubsection{Analysis Tab}\label{analysis-tab}
+
+Split into two panels for deep-dive reporting and plotting:
+
+\paragraph{Report Tab}\label{report-tab}
+
+\begin{itemize}
+\tightlist
+\item
+  Filter data by school
+\item
+  Dynamically select which numeric metrics (e.g., ERA, WHIP, SO/9) to
+  summarize
+\item
+  Generate grouped \textbf{summary stats} by school and year (mean,
+  median, standard deviation)
+\item
+  Switch between raw data view and summary output
+\end{itemize}
+
+\paragraph{Plot Tab}\label{plot-tab}
+
+\begin{itemize}
+\tightlist
+\item
+  Select a school and variable to analyze over time
+\item
+  Choose display mode:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \textbf{Raw Only} (mean value by year)
+  \item
+    \textbf{Summary Only} (mean, median, and SD)
+  \item
+    \textbf{Both}
+  \end{itemize}
+\item
+  Output is rendered as a grouped \textbf{interactive bar chart} via
+  Plotly
+\end{itemize}
+
+\subsubsection{Player Ratings Tab}\label{player-ratings-tab}
+
+Comprehensive system for evaluating pitchers across multiple dimensions:
+- \textbf{Customizable prior shrinkage factors} (Bayesian smoothing by
+IP) - \textbf{User-defined composite rating weights} for ERA, FIP, SO/9,
+BB/9, etc. - League-year averages and rescaling to \textbf{0--100 rating
+scale} - \textbf{Dynamic recalculation of ratings} with adjustable
+inputs - Two views: \textbf{Player Ratings} and full \textbf{Methodology
+Table} with raw/shrunk/rescaled stat breakdown - Expanded Info tab with
+full explanation of rating logic and design
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Data Structure}\label{data-structure}
+
+Data is loaded from a local directory (\texttt{/Data/}) and cleaned
+using the \texttt{janitor} package. Each file typically includes:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{school}, \texttt{year}, \texttt{name}, \texttt{ip},
+  \texttt{era}, \texttt{whip}, \texttt{bb9}, \texttt{so9}, \texttt{h9},
+  \texttt{hr9}, etc.
+\item
+  Only pitching stats are used. Hitting stats are excluded.
+\end{itemize}
+
+\begin{quote}
+⚠️ \textbf{Note}: Large-scale data ingestion is ongoing. Full D1
+coverage is a long-term goal.
+\end{quote}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\end{document}
