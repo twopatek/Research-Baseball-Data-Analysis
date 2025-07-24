@@ -25,6 +25,7 @@ For collaboration inquiries or licensing requests, contact: mdadams626@outlook.c
 ###  Leaderboard Tab
 Quickly explore top pitching performers with built-in filters:
 - **Innings Pitched Slider**: Adjust the minimum and maximum IP threshold
+- **Top 5 SO (Team-Year & Player-Year)**
 - **Top 5 ERA (Team-Year & Player-Year)**
 - **Top 5 WHIP (Team-Year & Player-Year)**  
 Displayed using interactive DataTables for easy comparison.
@@ -57,6 +58,15 @@ Split into two panels for deep-dive reporting and plotting:
   - **Both**
 - Output is rendered as a grouped **interactive bar chart** via Plotly
 
+### Player Ratings Tab
+Comprehensive system for evaluating pitchers across multiple dimensions:
+- **Customizable prior shrinkage factors** (Bayesian smoothing by IP)
+- **User-defined composite rating weights** for ERA, FIP, SO/9, BB/9, etc.
+- League-year averages and rescaling to **0–100 rating scale**
+- **Dynamic recalculation of ratings** with adjustable inputs
+- Two views: **Player Ratings** and full **Methodology Table** with raw/shrunk/rescaled stat breakdown
+- Expanded Info tab with full explanation of rating logic and design
+
 ---
 
 ## Data Structure
@@ -70,16 +80,3 @@ Data is loaded from a local directory (`/Data/`) and cleaned using the `janitor`
 
 ---
 
-## Getting Started
-
-To run the app locally:
-
-```r
-# Load dependencies
-pacman::p_load(
-  tidyverse, janitor, data.table, here, rlang,
-  shiny, shinydashboard, DT, plotly, shinyWidgets
-)
-
-# Launch the app
-shiny::runApp("path/to/app")
