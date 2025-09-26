@@ -1,6 +1,8 @@
 .Rproj.user
 .Rhistory
+.Rapp.history
+.Rproj
 .RData
 .Ruserdata
-Data/
+.rsconnect
 
