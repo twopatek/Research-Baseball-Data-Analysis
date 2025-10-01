@@ -6,8 +6,11 @@ library(purrr)
 library(shiny)
 library(shinydashboard)
 library(ggplot2)
-library(gt)
+# library(gt)
 library(magrittr)
+library(DT)
+library(plotly)
+library(shinyWidgets)
 
 # List data files to compile
 data_list <- list.files(
