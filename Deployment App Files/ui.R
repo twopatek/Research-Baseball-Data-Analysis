@@ -1,4 +1,3 @@
-# Define UI for application that draws a histogram
 ui <- dashboardPage(
   dashboardHeader(title = "NCAA Pitching App"),
   dashboardSidebar(
@@ -224,18 +223,6 @@ ui <- dashboardPage(
                     status = "primary",
                     solidHeader = TRUE,
                     DTOutput("ratings_table")
-                  )
-                )
-              ),
-              tabPanel(
-                "Methodology",
-                fluidRow(
-                  box(
-                    width = 12,
-                    title = "Methodology Data",
-                    status = "primary",
-                    solidHeader = TRUE,
-                    DTOutput("methodology_table")
                   )
                 )
               ),

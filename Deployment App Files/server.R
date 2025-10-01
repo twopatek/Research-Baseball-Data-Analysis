@@ -216,19 +216,6 @@ server <- function(input, output, session) {
     )
   )
 
-  # Methodology Table
-  output$methodology_table <- renderDT(
-    {
-      filtered_detailed()
-    },
-    options = list(
-      pageLength = -1,
-      scrollY = "500px",
-      scrollX = TRUE,
-      paging = FALSE
-    )
-  )
-
   # Recalculate logic placeholder
   observeEvent(input$update_ratings, {
     withProgress(
