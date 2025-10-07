@@ -1,7 +1,7 @@
-.Rproj.user
+dev_run.R
+deploy.R
 .Rhistory
 .Rapp.history
-.Rproj
 .RData
 .Ruserdata
 .rsconnect
