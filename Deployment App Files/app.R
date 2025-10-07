@@ -7,4 +7,4 @@ source(file.path(app_dir, "server.R"), local = TRUE)
 
 shinyApp(ui, server)
 
-shiny::runApp("Deployment App Files")
+# shiny::runApp("Deployment App Files")
