@@ -10,18 +10,21 @@ library(shinyWidgets)
 
 # List data files to compile
 data_list <- list.files(
-  path = here::here("Data"),
+  path = here::here("Deployment App Files", "Demo Data"),
   pattern = "sportsref_download",
   recursive = TRUE,
   full.names = TRUE
 )
 
 # Create standard file format
-template_df <- readr::read_csv(here::here(
-  "Data",
-  "LSU",
-  "sportsref_download_LSU_2025.csv"
-)) |>
+template_df <- readr::read_csv(
+  here::here(
+    "Deployment App Files",
+    "Demo Data",
+    "LSU",
+    "sportsref_download_LSU_2025.csv"
+  )
+) |>
   janitor::clean_names()
 
 col_types_template <- map_chr(template_df, ~ class(.x)[1])
@@ -86,37 +89,37 @@ schools <- sort(unique(as.character(df$school)))
 seasons <- sort(unique(as.character(df$year)))
 
 # Define stats to rate and their direction
-rating_stats <- tribble(
+rating_stats <- tibble::tribble(
   ~stat,
   ~higher_is_better,
   ~prior_weight,
+  "bb9",
+  FALSE,
+  20,
+  "bb_pct",
+  FALSE,
+  15,
   "era",
   FALSE,
   40,
   "fip",
   FALSE,
   30,
-  "so9",
-  TRUE,
-  15,
-  "bb9",
-  FALSE,
-  20,
   "hr9",
   FALSE,
   25,
-  "whip",
-  FALSE,
-  25,
-  "so_w",
-  TRUE,
-  10,
   "k_pct",
   TRUE,
   15,
-  "bb_pct",
+  "so9",
+  TRUE,
+  15,
+  "so_w",
+  TRUE,
+  10,
+  "whip",
   FALSE,
-  15
+  25
 )
 
 # Define stat weights for composite
