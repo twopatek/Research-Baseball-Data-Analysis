@@ -1,52 +1,15 @@
-# Define UI for application that draws a histogram
 ui <- dashboardPage(
-  dashboardHeader(title = "NCAA Pitching Analysis Dashboard"),
+  dashboardHeader(title = "NCAA Pitching App"),
   dashboardSidebar(
-    sidebarMenu(id = "tabs",
-                menuItem("Info", tabName = "info_tab"),
-                menuItem("Leaderboard", tabName = "leaderboard_tab"),
-                menuItem("Data", tabName = "data_tab"),
-                menuItem("Analysis", tabName = "analysis_tab"),
-                menuItem("Player Ratings", tabName = "ratings_tab")
+    sidebarMenu(
+      id = "tabs",
+      menuItem("Leaderboard", tabName = "leaderboard_tab"),
+      menuItem("Player Ratings", tabName = "ratings_tab"),
+      menuItem("Info", tabName = "info_tab")
     )
   ),
   dashboardBody(
     tabItems(
-      tabItem(
-        tabName = "info_tab",
-        fluidRow(
-          box(
-            title = "Project Overview",
-            width = 12,
-            status = "info",
-            solidHeader = TRUE,
-            collapsible = TRUE,
-            HTML("
-              <p>This NCAA Pitching Dashboard is a personal, non-commercial project created to analyze and visualize trends in college baseball pitching statistics.</p>
-
-  <p><strong>Project Goals:</strong></p>
-  <ul>
-    <li>Explore historical NCAA pitching data across multiple seasons.</li>
-    <li>Provide an interactive dashboard for filtering, analysis, and visualization of player and team performance.</li>
-  </ul>
-
-  <p><strong>Data Methodology:</strong></p>
-  <ul>
-    <li>Data was manually compiled from publicly accessible team season pages available on a leading baseball statistics website.</li>
-    <li>Files were standardized and cleaned locally before being included in the dashboard.</li>
-    <li>This is an ongoing process, with additional teams being added over time.</li>
-  </ul>
-
-  <p><em>This dashboard is for educational and demonstration purposes only. It is not affiliated with or endorsed by any official data provider or governing body.</em></p>
-
-  <p>Built using <code>R</code>, <code>Shiny</code>, <code>tidyverse</code>, and <code>plotly</code>.</p>
-"
-                 )
-            
-          )
-        )
-      ),
-      
       tabItem(
         tabName = "leaderboard_tab",
         fluidRow(
@@ -126,321 +89,153 @@ ui <- dashboardPage(
         )
       ),
       tabItem(
-        tabName = "data_tab",
+        tabName = "ratings_tab",
         fluidRow(
+          # Left Panel for inputs
           column(
-            width = 6,
+            width = 3,
             box(
-              title = "Filter data by school and year",
-              solidHeader = TRUE,
-              status = "info",
               width = 12,
-              pickerInput(
-                inputId = "data_schools",
-                label = "Select School(s)",
-                choices = schools,
-                selected = schools,
-                multiple = TRUE,
-                options = list(
-                  `actions-box` = TRUE,
-                  `live-search` = TRUE,
-                  `selected-text-format` = "count > 3"
-                )
+              title = "Select Filters",
+              status = "info",
+              solidHeader = TRUE,
+              uiOutput("shared_rating_inputs"),
+              actionButton(
+                "update_ratings",
+                "Recalculate Ratings",
+                class = "btn-primary"
               ),
-              pickerInput(
-                inputId = "data_years",
-                label = "Select Year(s)",
-                choices = seasons,
-                selected = seasons,
-                multiple = TRUE,
-                options = list(
-                  `actions-box` = TRUE,
-                  `live-search` = TRUE,
-                  `selected-text-format` = "count > 3"
+              br(),
+              br(),
+              actionButton(
+                "reset_rating_inputs",
+                "Reset Weights & Priors",
+                class = "btn-secondary"
+              )
+            ),
+            box(
+              width = 12,
+              title = "Prior Weights (Shrinkage Factors)",
+              status = "info",
+              solidHeader = TRUE,
+              fluidRow(
+                column(
+                  6,
+                  lapply(
+                    sort(rating_stats$stat)[
+                      1:ceiling(length(rating_stats$stat) / 2)
+                    ],
+                    function(stat) {
+                      numericInput(
+                        inputId = paste0("prior_", stat),
+                        label = paste("Prior:", stat),
+                        value = rating_stats$prior_weight[
+                          rating_stats$stat == stat
+                        ],
+                        step = 1
+                      )
+                    }
+                  )
+                ),
+                column(
+                  6,
+                  lapply(
+                    sort(rating_stats$stat)[
+                      (ceiling(length(rating_stats$stat) / 2) + 1):length(
+                        rating_stats$stat
+                      )
+                    ],
+                    function(stat) {
+                      numericInput(
+                        inputId = paste0("prior_", stat),
+                        label = paste("Prior:", stat),
+                        value = rating_stats$prior_weight[
+                          rating_stats$stat == stat
+                        ],
+                        step = 1
+                      )
+                    }
+                  )
+                )
+              )
+            ),
+
+            box(
+              width = 12,
+              title = "Composite Rating Weights",
+              status = "info",
+              solidHeader = TRUE,
+              textOutput("weight_sum_warning"),
+              fluidRow(
+                column(
+                  6,
+                  lapply(
+                    sort(rating_stats$stat)[
+                      1:ceiling(length(rating_stats$stat) / 2)
+                    ],
+                    function(stat) {
+                      numericInput(
+                        inputId = paste0("weight_", stat),
+                        label = paste("Weight:", stat),
+                        value = stat_weights[[paste0(stat, "_rating")]],
+                        step = 0.01,
+                        min = 0,
+                        max = 1
+                      )
+                    }
+                  )
+                ),
+                column(
+                  6,
+                  lapply(
+                    sort(rating_stats$stat)[
+                      (ceiling(length(rating_stats$stat) / 2) + 1):length(
+                        rating_stats$stat
+                      )
+                    ],
+                    function(stat) {
+                      numericInput(
+                        inputId = paste0("weight_", stat),
+                        label = paste("Weight:", stat),
+                        value = stat_weights[[paste0(stat, "_rating")]],
+                        step = 0.01,
+                        min = 0,
+                        max = 1
+                      )
+                    }
+                  )
                 )
               )
             )
           ),
+
+          # Right Panel for outputs
           column(
-            width = 6,
-            box(
-              title = "Choose the minimum or maximum innings pitched",
-              solidHeader = TRUE,
-              status = "info",
+            width = 9,
+            tabBox(
               width = 12,
-              sliderInput(
-                "var",
-                label = "Choose the minimum or maximum innings pitched",
-                min = min_ip,
-                max = max_ip,
-                value = c(1, max_ip)
-              )
-            )
-          )
-        ),
-        fluidRow(
-          box(
-            title = "Filtered Player Data",
-            status = "primary",
-            solidHeader = TRUE,
-            width = 12,
-            DTOutput("raw_data")
-          )
-        )
-      ),
-      tabItem(
-        tabName = "analysis_tab",
-        fluidRow(
-          tabBox(
-            width = 12,
-            tabPanel("Report Tab", 
-                     fluidRow(
-                       column(
-                         width = 3,
-                         box(
-                           title = "Report Data Parameters",
-                           solidHeader = TRUE,
-                           status = "info",
-                           width = 12,
-                           pickerInput(
-                             inputId = "report_schools",
-                             label = "Select School(s)",
-                             choices = schools,
-                             selected = schools,
-                             multiple = TRUE,
-                             options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
-                             )
-                           ),
-                           uiOutput("report_var_selector"),
-                           actionButton("summary_stats", "Calculate Summary Stats"),
-                           br(), br(), 
-                           actionButton("reset_report_table", "Reset Table")
-                         )
-                       ),
-                       column(
-                         width = 9,
-                         box(
-                           title = "Report Output",
-                           solidHeader = TRUE,
-                           status = "primary",
-                           width = 12,
-                           DTOutput("analysis_report")
-                         )
-                       )
-                     )
-            ),
-            
-            tabPanel("Advanced Statistics", 
-                     fluidRow(
-                       column(
-                         width = 3,
-                         box(
-                           title = "Advanced Stat Controls",
-                           solidHeader = TRUE,
-                           status = "info",
-                           width = 12,
-                           pickerInput(
-                             inputId = "adv_schools",
-                             label = "Select School(s)",
-                             choices = schools,
-                             selected = schools,
-                             multiple = TRUE,
-                             options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
-                             )
-                           ),
-                           pickerInput(
-                             inputId = "adv_years",
-                             label = "Select Year(s)",
-                             choices = seasons,
-                             selected = seasons,
-                             multiple = TRUE,
-                             options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
-                             )
-                           ),
-                           fluidRow(
-                             column(
-                               width = 6,
-                               numericInput("hr_weight", "HR Weight (FIP)", value = 13),
-                               numericInput("bb_weight", "BB Weight (FIP)", value = 3),
-                               numericInput("so_weight", "SO Weight (FIP)", value = 2),
-                               numericInput("fip_constant", "FIP Constant", value = 3.1),
-                               numericInput("fip_min_ip", "Min IP (FIP)", value = 10)
-                             ),
-                             column(
-                               width = 6,
-                               numericInput("k_pct_min_bf", "Min BF (K%)", value = 10),
-                               numericInput("bb_pct_min_bf", "Min BF (BB%)", value = 10),
-                               numericInput("k_bb_min_bb", "Min BB (K/BB)", value = 1),
-                               numericInput("k_bb_min_ip", "Min IP (K/BB)", value = 10),
-                               numericInput("babip_min_ip", "Min IP (BABIP)", value = 10)
-                             )
-                           ),
-                           
-                           br(),
-                           actionButton("reset_adv_stats", "Reset")
-                         )
-                       ),
-                       column(
-                         width = 9,
-                         box(
-                           title = "Advanced Statistics Output",
-                           solidHeader = TRUE,
-                           status = "primary",
-                           width = 12,
-                           DTOutput("adv_stats_output")  
-                         )
-                       )
-                     )
-            ),
-            
-            tabPanel("Plot Tab", 
-                     fluidRow(
-                       column(
-                         width = 4,
-                         box(
-                           title = "Filter Plot",
-                           solidHeader = TRUE,
-                           status = "info",
-                           width = 12,
-                           pickerInput(
-                             inputId = "plot_schools",
-                             label = "Select School(s)",
-                             choices = schools,
-                             selected = first(schools),
-                             multiple = FALSE,
-                             options = list(
-                               `actions-box` = TRUE,
-                               `live-search` = TRUE,
-                               `selected-text-format` = "count > 3"
-                             )
-                           ),
-                           uiOutput("plot_var_selector")
-                         )),
-                       column(
-                         width = 8,
-                         box(
-                           title = "Plot",
-                           solidHeader = TRUE,
-                           status = "primary",
-                           width = 12,
-                           plotlyOutput("analysis_plot")
-                         )
-                       )
-                     )
-            )
-          )
-        )
-      ),
-      
-      tabItem(tabName = "ratings_tab",
-              fluidRow(
-                # Left Panel for inputs
-                column(
-                  width = 3,
-                  box(width = 12, 
-                      title = "Select Filters", 
-                      status = "info", 
-                      solidHeader = TRUE,
-                      uiOutput("shared_rating_inputs"),
-                      actionButton("update_ratings", "Recalculate Ratings", class = "btn-primary"),
-                      br(), br(),
-                      actionButton("reset_rating_inputs", "Reset Weights & Priors", class = "btn-secondary")
-                  ),
-                  
-                  box(width = 12, title = "Prior Weights (Shrinkage Factors)", status = "info", solidHeader = TRUE,
-                      fluidRow(
-                        column(6,
-                               lapply(sort(rating_stats$stat)[1:ceiling(length(rating_stats$stat)/2)], function(stat) {
-                                 numericInput(
-                                   inputId = paste0("prior_", stat),
-                                   label = paste("Prior:", stat),
-                                   value = rating_stats$prior_weight[rating_stats$stat == stat],
-                                   step = 1
-                                 )
-                               })
-                        ),
-                        column(6,
-                               lapply(sort(rating_stats$stat)[(ceiling(length(rating_stats$stat)/2) + 1):length(rating_stats$stat)], function(stat) {
-                                 numericInput(
-                                   inputId = paste0("prior_", stat),
-                                   label = paste("Prior:", stat),
-                                   value = rating_stats$prior_weight[rating_stats$stat == stat],
-                                   step = 1
-                                 )
-                               })
-                        )
-                      )
-                  ),
-                  
-                  box(width = 12, title = "Composite Rating Weights", status = "info", solidHeader = TRUE,
-                      textOutput("weight_sum_warning"),
-                      fluidRow(
-                        column(6,
-                               lapply(sort(rating_stats$stat)[1:ceiling(length(rating_stats$stat)/2)], function(stat) {
-                                 numericInput(
-                                   inputId = paste0("weight_", stat),
-                                   label = paste("Weight:", stat),
-                                   value = stat_weights[[paste0(stat, "_rating")]],
-                                   step = 0.01, min = 0, max = 1
-                                 )
-                               })
-                        ),
-                        column(6,
-                               lapply(sort(rating_stats$stat)[(ceiling(length(rating_stats$stat)/2) + 1):length(rating_stats$stat)], function(stat) {
-                                 numericInput(
-                                   inputId = paste0("weight_", stat),
-                                   label = paste("Weight:", stat),
-                                   value = stat_weights[[paste0(stat, "_rating")]],
-                                   step = 0.01, min = 0, max = 1
-                                 )
-                               })
-                        )
-                      )
+              tabPanel(
+                "Player Ratings",
+                fluidRow(
+                  box(
+                    width = 12,
+                    title = "Player Ratings",
+                    status = "primary",
+                    solidHeader = TRUE,
+                    DTOutput("ratings_table")
                   )
-                  
-                ),
-                
-                # Right Panel for outputs
-                column(
-                  width = 9,
-                  tabBox(width = 12,
-                         tabPanel("Player Ratings",
-                                  fluidRow(
-                                    box(
-                                      width = 12,
-                                      title = "Player Ratings",
-                                      status = "primary",
-                                      solidHeader = TRUE,
-                                      DTOutput("ratings_table"))
-                                  )
-                         ),
-                         tabPanel("Methodology",
-                                  fluidRow(
-                                    box(
-                                      width = 12,
-                                      title = "Methodology Data",
-                                      status = "primary",
-                                      solidHeader = TRUE,
-                                      DTOutput("methodology_table"))
-                                  )
-                         ),
-                         tabPanel("Info",
-                                  fluidRow(
-                                    box(
-                                      width = 12,
-                                      title = "Methodology Expanded",
-                                      status = "primary",
-                                      solidHeader = TRUE,
-                                      HTML("
+                )
+              ),
+              tabPanel(
+                "Info",
+                fluidRow(
+                  box(
+                    width = 12,
+                    title = "Methodology Expanded",
+                    status = "primary",
+                    solidHeader = TRUE,
+                    HTML(
+                      "
         <p>This player rating system evaluates NCAA Division I pitchers based on a weighted combination of performance metrics. The process includes:</p>
         <ul>
           <li><strong>Stat Selection:</strong> ERA, FIP, SO/9, BB/9, HR/9, WHIP, SO/W, K%, BB%.</li>
@@ -449,17 +244,46 @@ ui <- dashboardPage(
           <li><strong>Stat Rating:</strong> Pitchers are rated for each stat on a percentile basis (0–100 scale).</li>
           <li><strong>Composite Rating:</strong> Weighted average of individual stat ratings using user-defined weights.</li>
         </ul>
-        <p>You can customize the weights and prior shrinkage values in the 'Methodology' tab.</p>
-      ")
-                                    )
-                                  )
-                         )
-                         
+      "
+                    )
                   )
                 )
               )
+            )
+          )
+        )
+      ),
+      tabItem(
+        tabName = "info_tab",
+        fluidRow(
+          box(
+            title = "Project Overview",
+            width = 12,
+            status = "info",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            HTML(
+              "
+              <p>This NCAA Pitching Dashboard is a personal, non-commercial project created to analyze and visualize trends in college baseball pitching statistics.</p>
+
+  <p><strong>Project Goals:</strong></p>
+  <ul>
+    <li>Explore historical NCAA pitching data across multiple seasons.</li>
+    <li>Provide an interactive dashboard for filtering, analysis, and visualization of player and team performance.</li>
+  </ul>
+
+  <p><strong>Data Methodology:</strong></p>
+  <ul>
+    <li>Data was manually compiled from publicly accessible team season pages available on a leading baseball statistics website.</li>
+    <li>Files were standardized and cleaned locally before being included in the dashboard.</li>
+  </ul>
+
+  <p><em>This dashboard is for educational and demonstration purposes only. It is not affiliated with or endorsed by any official data provider or governing body.</em></p>
+"
+            )
+          )
+        )
       )
     )
   )
 )
-
