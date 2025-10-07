@@ -5,7 +5,6 @@ library(shiny)
 library(shinydashboard)
 library(magrittr)
 library(DT)
-library(plotly)
 library(shinyWidgets)
 
 # List data files to compile
