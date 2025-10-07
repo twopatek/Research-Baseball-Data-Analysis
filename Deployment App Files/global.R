@@ -1,12 +1,7 @@
-# Load and install packages
-# pacman::p_load(tidyverse, janitor, data.table, here, rlang, shinydashboard, shiny, DT, bslib, plotly, shinyWidgets, rsconnect, scales)
-
+# Load and packages
 library(dplyr)
-library(purrr)
 library(shiny)
 library(shinydashboard)
-library(ggplot2)
-# library(gt)
 library(magrittr)
 library(DT)
 library(plotly)

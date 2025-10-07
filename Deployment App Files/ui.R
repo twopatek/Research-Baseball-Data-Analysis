@@ -244,7 +244,6 @@ ui <- dashboardPage(
           <li><strong>Stat Rating:</strong> Pitchers are rated for each stat on a percentile basis (0–100 scale).</li>
           <li><strong>Composite Rating:</strong> Weighted average of individual stat ratings using user-defined weights.</li>
         </ul>
-        <p>You can customize the weights and prior shrinkage values in the 'Methodology' tab.</p>
       "
                     )
                   )
@@ -277,12 +276,9 @@ ui <- dashboardPage(
   <ul>
     <li>Data was manually compiled from publicly accessible team season pages available on a leading baseball statistics website.</li>
     <li>Files were standardized and cleaned locally before being included in the dashboard.</li>
-    <li>This is an ongoing process, with additional teams being added over time.</li>
   </ul>
 
   <p><em>This dashboard is for educational and demonstration purposes only. It is not affiliated with or endorsed by any official data provider or governing body.</em></p>
-
-  <p>Built using <code>R</code>, <code>Shiny</code>, <code>tidyverse</code>, and <code>plotly</code>.</p>
 "
             )
           )

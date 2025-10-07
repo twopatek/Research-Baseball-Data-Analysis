@@ -21,11 +21,11 @@ server <- function(input, output, session) {
 
   # Top Strikeouts by Team-Year
   output$top_so_teams <- renderDT({
-    df %>%
-      mutate(year_team = paste(year, school)) %>%
-      group_by(year_team) %>%
-      summarize(so = round(sum(so, na.rm = TRUE), 0)) %>%
-      arrange(desc(so)) %>%
+    df |>
+      mutate(year_team = paste(year, school)) |>
+      group_by(year_team) |>
+      summarize(so = round(sum(so, na.rm = TRUE), 0)) |>
+      arrange(desc(so)) |>
       datatable(
         options = list(
           paging = FALSE,
@@ -43,11 +43,11 @@ server <- function(input, output, session) {
   output$top_so_players <- renderDT({
     req(input$ip_range)
 
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>%
-      mutate(year_school_player = paste(year, school, name)) %>%
-      select(year_school_player, ip, so) %>%
-      arrange(desc(so)) %>%
+    df |>
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) |>
+      mutate(year_school_player = paste(year, school, name)) |>
+      select(year_school_player, ip, so) |>
+      arrange(desc(so)) |>
       datatable(
         options = list(
           paging = FALSE,
@@ -65,11 +65,11 @@ server <- function(input, output, session) {
   output$top_era_teams <- renderDT({
     req(input$ip_range)
 
-    df %>%
-      mutate(year_team = paste(year, school)) %>%
-      group_by(year_team) %>%
-      summarize(era = round(mean(era, na.rm = TRUE), 3)) %>%
-      arrange(era) %>%
+    df |>
+      mutate(year_team = paste(year, school)) |>
+      group_by(year_team) |>
+      summarize(era = round(mean(era, na.rm = TRUE), 3)) |>
+      arrange(era) |>
       datatable(
         options = list(
           paging = FALSE,
@@ -87,11 +87,11 @@ server <- function(input, output, session) {
   output$top_era_players <- renderDT({
     req(input$ip_range)
 
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>%
-      mutate(year_school_player = paste(year, school, name)) %>%
-      select(year_school_player, ip, era) %>%
-      arrange(era) %>%
+    df |>
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) |>
+      mutate(year_school_player = paste(year, school, name)) |>
+      select(year_school_player, ip, era) |>
+      arrange(era) |>
       datatable(
         options = list(
           paging = FALSE,
@@ -109,11 +109,11 @@ server <- function(input, output, session) {
   output$top_whip_teams <- renderDT({
     req(input$ip_range)
 
-    df %>%
-      mutate(year_team = paste(year, school)) %>%
-      group_by(year_team) %>%
-      summarize(whip = round(mean(whip, na.rm = TRUE), 3)) %>%
-      arrange(whip) %>%
+    df |>
+      mutate(year_team = paste(year, school)) |>
+      group_by(year_team) |>
+      summarize(whip = round(mean(whip, na.rm = TRUE), 3)) |>
+      arrange(whip) |>
       datatable(
         options = list(
           paging = FALSE,
@@ -131,11 +131,11 @@ server <- function(input, output, session) {
   output$top_whip_players <- renderDT({
     req(input$ip_range)
 
-    df %>%
-      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) %>%
-      mutate(year_school_player = paste(year, school, name)) %>%
-      select(year_school_player, ip, whip) %>%
-      arrange(whip) %>%
+    df |>
+      filter(ip >= input$ip_range[1], ip <= input$ip_range[2]) |>
+      mutate(year_school_player = paste(year, school, name)) |>
+      select(year_school_player, ip, whip) |>
+      arrange(whip) |>
       datatable(
         options = list(
           paging = FALSE,
@@ -192,14 +192,14 @@ server <- function(input, output, session) {
   filtered_ratings <- reactive({
     req(ratings_data(), input$rating_schools, input$rating_years)
 
-    ratings_data() %>%
+    ratings_data() |>
       filter(year %in% input$rating_years, school %in% input$rating_schools)
   })
 
   filtered_detailed <- reactive({
     req(detailed_data(), input$rating_schools, input$rating_years)
 
-    detailed_data() %>%
+    detailed_data() |>
       filter(year %in% input$rating_years, school %in% input$rating_schools)
   })
 
@@ -241,10 +241,10 @@ server <- function(input, output, session) {
           input[[paste0("prior_", stat)]]
         })
 
-        updated_rating_stats <- rating_stats %>%
+        updated_rating_stats <- rating_stats |>
           mutate(prior_weight = updated_priors)
 
-        rating_input_df <- player_ratings_df %>%
+        rating_input_df <- player_ratings_df |>
           filter(ip > 0)
 
         # Run ratings generation
