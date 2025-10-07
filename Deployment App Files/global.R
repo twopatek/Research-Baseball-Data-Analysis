@@ -1,5 +1,6 @@
 # Load and packages
 library(dplyr)
+library(purrr)
 library(shiny)
 library(shinydashboard)
 library(magrittr)
